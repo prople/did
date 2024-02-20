@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = [
+    "core",
+]
+
+[workspace.package]
+authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
+rust-version = "1.74"
+license = "GPL-3.0-only"
