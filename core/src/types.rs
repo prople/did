@@ -15,10 +15,6 @@ pub const CONTEXT_X25519: &str = "https://w3id.org/security/suites/x25519-2020/v
 pub const VERIFICATION_TYPE_ED25519: &str = "Ed25519VerificationKey2020";
 pub const VERIFICATION_TYPE_X25519: &str = "X25519KeyAgreementKey2020";
 
-pub const STORAGE_COLUMN_DID: &str = "_did";
-pub const STORAGE_COLUMN_DID_DOC: &str = "_did_doc";
-pub const STORAGE_COLUMN_DID_KEY_SECURES: &str = "_did_key_secures";
-
 #[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidDID,
