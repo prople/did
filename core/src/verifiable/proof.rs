@@ -6,6 +6,12 @@ use rst_common::with_cryptography::blake3::{self, Hash};
 use crate::types::DIDError;
 use crate::types::ToJCS;
 
+/// `Proof` is an object used to generate `DID Proof` used at `VC` and `VP`
+///
+/// Ref:
+/// - <https://www.w3.org/TR/vc-data-model-2.0/#credentials>
+/// - <https://www.w3.org/TR/vc-data-model-2.0/#proofs-signatures>
+/// - <https://www.w3.org/TR/vc-data-model-2.0/#algorithms>
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct Proof {
@@ -80,6 +86,7 @@ impl Proof {
     }
 }
 
+/// `Value` is a wrapper object of a [`Signature`]
 pub struct Value {
     signature: Signature,
 }
@@ -91,10 +98,15 @@ impl Value {
         }
     }
 
-    pub fn transform(keypair: KeyPair, unsecured: Box<dyn ToJCS>) -> Result<(Hash, String), DIDError> {
+    pub fn transform(
+        keypair: KeyPair,
+        unsecured: Box<dyn ToJCS>,
+    ) -> Result<(Hash, String), DIDError> {
         let tojcs = unsecured.to_jcs().map_err(|err| match err {
             DIDError::GenerateVCError(msg) => DIDError::GenerateJSONJCSError(msg.to_string()),
-            _ => DIDError::GenerateJSONJCSError("unable to generate canonicalized json".to_string()),
+            _ => {
+                DIDError::GenerateJSONJCSError("unable to generate canonicalized json".to_string())
+            }
         })?;
 
         let toblake = blake3::hash(tojcs.as_bytes());
@@ -115,8 +127,8 @@ mod tests {
     use rst_common::standard::serde_json;
     use rst_common::with_cryptography::hex;
 
-    use crate::verifiable::objects::{VC, VP};
     use crate::types::ToJCS;
+    use crate::verifiable::objects::{VC, VP};
 
     #[derive(Serialize, Deserialize)]
     #[serde(crate = "self::serde")]

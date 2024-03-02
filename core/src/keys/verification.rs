@@ -6,12 +6,14 @@ use prople_crypto::EDDSA::{self as Ed25519, PrivKey};
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
+/// `Error` is a specific error types used for verification only
 #[derive(Debug, PartialEq)]
 pub enum Error {
     GeneratePrivKeyError,
     GenerateSecureKeyError,
 }
 
+/// `Pairs` used to generate public and private keys from `EdDSA` algorithm
 #[derive(Debug, Clone)]
 pub struct Pairs {
     pub pub_key: String,
@@ -38,6 +40,7 @@ impl KeySecureBuilder for Pairs {
     }
 }
 
+/// `Key` used to hold a key pair from [`Ed25519::KeyPair`]
 pub struct Key {
     keypair: Ed25519::KeyPair,
 }

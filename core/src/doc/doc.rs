@@ -3,6 +3,8 @@ use rst_common::standard::serde_json;
 
 use crate::types::*;
 
+/// `Primary` is a main data structure used for `authentication`, `assertion`
+/// `capabilityInvocation` and `capabilityDelegation`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct Primary {
@@ -16,6 +18,10 @@ pub struct Primary {
     pub multibase: DIDMultibase,
 }
 
+/// `Doc` is a main data structure modeling the core properties
+/// from the `DID Document`
+///
+/// Ref: <https://www.w3.org/TR/did-core/#core-properties>
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct Doc {
@@ -108,8 +114,24 @@ impl Doc {
 }
 
 impl ToJSON for Doc {
-    fn to_json(&self) -> Result<String, DIDError> {     
+    fn to_json(&self) -> Result<String, DIDError> {
         serde_json::to_string(self).map_err(|err| DIDError::GenerateDocError(err.to_string()))
+    }
+}
+
+impl Validator for Doc {
+    fn validate(&self) -> Result<(), DIDError> {
+        if self.id.is_empty() {
+            return Err(DIDError::ValidateError("[doc]: missing id".to_string()));
+        }
+
+        if self.context.len() < 1 {
+            return Err(DIDError::ValidateError(
+                "[doc]: at least one context must be filled".to_string(),
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -142,5 +164,21 @@ mod tests {
         assert!(doc.cap_delegate.is_none());
         assert!(doc.cap_invoke.is_none());
         assert_eq!(doc.assertion.unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_validation_error() {
+        let mut doc = Doc::generate("test".to_string());
+        doc.context = vec![];
+
+        let validation = doc.validate();
+        assert!(validation.is_err());
+    }
+
+    #[test]
+    fn test_validation_success() {
+        let doc = Doc::generate("test".to_string());
+        let validation = doc.validate();
+        assert!(validation.is_ok());
     }
 }

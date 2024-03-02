@@ -1,3 +1,4 @@
+//! `verifiable` is module designed to generate a `VC (Verifiable Credential)` and also `VP (Verifiable Presentation)`
 mod proof;
 mod vc;
 mod vp;

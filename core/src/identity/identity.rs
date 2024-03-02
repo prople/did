@@ -1,16 +1,26 @@
-use crate::doc::types::{Doc, Primary};
+use crate::doc::types::{Doc, Primary, ToDoc};
 use crate::keys::{
     AggreementKey, AggreementPairs, IdentityPrivateKeyPairs, IdentityPrivateKeyPairsBuilder,
     KeySecureBuilder, KeySecureError, PrivateKeyPairs, VerificationKey, VerificationPairs,
 };
 use crate::types::*;
 
+/// `VerificationMethod` is an object used to generate two important keys, a `verification_pairs`
+/// and an `aggreement_pairs`
+///
+/// A `verification_pairs` is a public and private keys used to verify a context based on some signature
+/// An `aggreement_pairs` is a public and private keys used to generate the shared secret through `ECDH` algorithm
 #[derive(Debug, Clone)]
 struct VerificationMethod {
     pub verification_pairs: VerificationPairs,
     pub aggreement_pairs: AggreementPairs,
 }
 
+/// `Identity` is an object that hold a `DID Syntax` with specific `Prople DID Method` which contains
+/// `authentication` and `assertion`
+///
+/// The `authentication` used to authenticate an access request.
+/// The  `assertion` used to assert some given resources
 #[derive(Debug, Clone)]
 pub struct Identity {
     identity: String,
@@ -59,7 +69,22 @@ impl Identity {
         Ok(())
     }
 
-    pub fn to_doc(&self) -> Doc {
+    fn build_verification_method(&self) -> VerificationMethod {
+        let verification_key = VerificationKey::new();
+        let verification_pairs = verification_key.generate();
+
+        let aggreement_key = AggreementKey::new();
+        let aggreement_pairs = aggreement_key.generate();
+
+        VerificationMethod {
+            verification_pairs,
+            aggreement_pairs,
+        }
+    }
+}
+
+impl ToDoc for Identity {
+    fn to_doc(&self) -> Doc {
         let auth_verification_id = format!("{}#key-auth-verification", self.identity);
         let auth_aggreement_id = format!("{}#key-auth-aggrement", self.identity);
         let assertion_verification_id = format!("{}#key-assertion-verification", self.identity);
@@ -108,19 +133,6 @@ impl Identity {
         }
 
         doc
-    }
-
-    fn build_verification_method(&self) -> VerificationMethod {
-        let verification_key = VerificationKey::new();
-        let verification_pairs = verification_key.generate();
-
-        let aggreement_key = AggreementKey::new();
-        let aggreement_pairs = aggreement_key.generate();
-
-        VerificationMethod {
-            verification_pairs,
-            aggreement_pairs,
-        }
     }
 }
 

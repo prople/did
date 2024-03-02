@@ -5,6 +5,10 @@ use crate::types::{DIDError, ToJCS, ToJSON};
 use crate::verifiable::objects::{Proof, VC};
 use crate::verifiable::types::{Context, Type};
 
+/// `VP` a main object used to generate `DID VP`. The `VP` object MUST contains
+/// a [`VC`] object, it may be a single `VC` or multiple
+///
+/// Ref: <https://www.w3.org/TR/vc-data-model-2.0/#presentations>
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct VP {
@@ -69,7 +73,9 @@ impl VP {
 
     fn validate(&self) -> Result<(), DIDError> {
         if self.contexts.is_empty() {
-            return Err(DIDError::GenerateJSONError(String::from("vp: empty context")));
+            return Err(DIDError::GenerateJSONError(String::from(
+                "vp: empty context",
+            )));
         }
 
         if self.types.is_empty() {
@@ -87,11 +93,10 @@ impl VP {
 }
 
 impl ToJSON for VP {
-    fn to_json(&self) -> Result<String, DIDError> {        
+    fn to_json(&self) -> Result<String, DIDError> {
         match self.validate() {
-            Ok(_) => {
-                serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
-            }
+            Ok(_) => serde_json::to_string(self)
+                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
     }
@@ -100,9 +105,8 @@ impl ToJSON for VP {
 impl ToJCS for VP {
     fn to_jcs(&self) -> Result<String, DIDError> {
         match self.validate() {
-            Ok(_) => {
-                serde_jcs::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
-            }
+            Ok(_) => serde_jcs::to_string(self)
+                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
     }

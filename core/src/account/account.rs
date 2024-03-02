@@ -7,10 +7,10 @@ use prople_crypto::EDDSA::{KeyPair, PubKey};
 pub enum AccountError {
     #[error("unable to decode: {0}")]
     DecodeError(String),
-    
+
     #[error("unable to parse: {0}")]
     ParseHexError(String),
-    
+
     #[error("invalid public key: {0}")]
     InvalidPublicKey(String),
 }
@@ -42,7 +42,9 @@ impl Account {
         PubKey::from_hex(decoded)
             .map(|val| Self { key: val })
             .map_err(|err| match err {
-                EddsaError::Common(CommonError::ParseHexError(msg)) => AccountError::ParseHexError(msg),
+                EddsaError::Common(CommonError::ParseHexError(msg)) => {
+                    AccountError::ParseHexError(msg)
+                }
                 _ => AccountError::InvalidPublicKey("invalid public key".to_string()),
             })
     }

@@ -1,9 +1,12 @@
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
-use crate::context::ext::types::*;
-use crate::types::{DIDError, CONTEXT_VC, ToJSON};
+use crate::types::{DIDError, ToJSON, CONTEXT_VC};
 
+pub const CONTEXT_USER_AGENT_ADDRESS: &str = "https://schema.org/identifier";
+
+/// `UserConnectionCredentialProperties` is a properties designed to  fullfil the connection
+/// request contexts when user want to connect with others
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(crate = "self::serde")]
@@ -21,6 +24,7 @@ impl Default for UserConnectionCredentialProperties {
     }
 }
 
+/// `UserConnectionCredentialContext` is a custom context used specifically for the `Prople` needs
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(crate = "self::serde")]
 pub struct UserConnectionCredentialContext {
@@ -36,6 +40,7 @@ impl UserConnectionCredentialContext {
     }
 }
 
+/// `UserConnectionCredential` is an object used to generate main credential when connecting with others
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 #[serde(crate = "self::serde")]
@@ -52,7 +57,7 @@ impl UserConnectionCredential {
 }
 
 impl ToJSON for UserConnectionCredential {
-    fn to_json(&self) -> Result<String, DIDError> {        
+    fn to_json(&self) -> Result<String, DIDError> {
         serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
     }
 }

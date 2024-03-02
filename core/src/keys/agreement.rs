@@ -4,6 +4,7 @@ use prople_crypto::ECDH::{self as X25519, KeyPair};
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
+/// `Pairs` contains public and private keys that generated from `ECDH` algorithm
 #[derive(Debug, Clone)]
 pub struct Pairs {
     pub pub_key: String,
@@ -25,6 +26,9 @@ impl KeySecureBuilder for Pairs {
     }
 }
 
+/// `Key` used to generate specific `X25519` keypair
+///
+/// The public and private keys will be generated from this object
 pub struct Key {
     keypair: X25519::KeyPair,
 }

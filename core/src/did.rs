@@ -1,7 +1,16 @@
+//! `did` module used to generated the `DID Syntax` based on generated [`Account`] data
+
 use crate::account::Account;
 use crate::identity::types::Identity;
 use crate::types::*;
 
+/// `DID` is a main object used to generate an entity [`Account`] in specific format
+/// which is `DID Syntax`
+///
+/// The format itself will be like this:
+/// ```
+///     did:prople:<base58btc_encoded_data>
+/// ````
 pub struct DID {
     account: Account,
 }
@@ -27,7 +36,7 @@ impl DID {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::keys::IdentityPrivateKeyPairsBuilder;
+    use crate::{doc::types::ToDoc, keys::IdentityPrivateKeyPairsBuilder};
 
     #[test]
     fn test_generate() {

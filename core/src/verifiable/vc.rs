@@ -2,14 +2,17 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json::{self, Value};
 
 use crate::types::DIDError;
-use crate::verifiable::objects::Proof;
 use crate::types::{ToJCS, ToJSON};
+use crate::verifiable::objects::Proof;
 
 pub type Context = String;
 pub type ID = String;
 pub type Type = String;
 pub type SRI = String;
 
+/// `VC` is a main object to hold entity credential
+///
+/// Ref: <https://www.w3.org/TR/vc-data-model-2.0/>
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct VC {
@@ -83,12 +86,11 @@ impl VC {
 }
 
 impl ToJSON for VC {
-    fn to_json(&self) -> Result<String, DIDError> {        
+    fn to_json(&self) -> Result<String, DIDError> {
         let validation = self.validate();
         match validation {
-            Ok(_) => {
-                serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
-            }
+            Ok(_) => serde_json::to_string(self)
+                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
     }
@@ -98,9 +100,8 @@ impl ToJCS for VC {
     fn to_jcs(&self) -> Result<String, DIDError> {
         let validation = self.validate();
         match validation {
-            Ok(_) => {
-                serde_jcs::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
-            }
+            Ok(_) => serde_jcs::to_string(self)
+                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
     }
