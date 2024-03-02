@@ -1,6 +1,6 @@
 # prople/did/core
 
-`DID (Decentralized Identity)` is a new kind of identifier that enables verifiables and focus on decentralized digital
+`DID (Decentralized Identity)` is a new kind of identifier that focus on decentralized digital
 identity. A `DID` can be refer to 
 
 - Thing
@@ -14,14 +14,16 @@ From the standard W3C :
 
 > The Decentralized Identifiers (DIDs) defined in this specification are a new type of globally unique identifier. They are designed to enable individuals and organizations to generate their own identifiers using systems they trust. These new identifiers enable entities to prove control over them by authenticating using cryptographic proofs such as digital signatures.
 
-Source: https://www.w3.org/TR/did-core/
+Source: <https://www.w3.org/TR/did-core/> 
 
-The *decentralized identity* is one of primary objectives from `Prople`. There is no username, email or password used to identify an user in `Prople`. Any credential will be own and controlled by user.
+---
 
-Each of user will have their own `DID` following this format:
+The *decentralized identity* is one of primary objectives from `Prople`. There is no username, email or password used to identify an user in `Prople`. Any credential will be *own* and *controlled* by user.
+
+Each of user will have their own `DID` with this format:
 
 ```
-did:prople:<base58btc_eddsa_public_key>
+did:prople:<base58btc_encoded_data>
 ```
 
 Example:
