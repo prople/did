@@ -1,5 +1,9 @@
+use rst_common::standard::serde::{self, Deserialize, Serialize};
+use rst_common::standard::serde_json;
+
 use prople_crypto::KeySecure::KeySecure;
-use serde::{Deserialize, Serialize};
+
+use crate::types::{DIDError, ToJSON};
 
 #[derive(Debug)]
 pub enum Error {
@@ -18,12 +22,14 @@ pub trait IdentityPrivateKeyPairsBuilder {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct PrivateKeyPairs {
     pub verification: KeySecure,
     pub aggrement: KeySecure,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct IdentityPrivateKeyPairs {
     pub identity: String,
 
@@ -45,5 +51,11 @@ impl IdentityPrivateKeyPairs {
 
     pub fn to_json(&self) -> Result<String, Error> {
         serde_json::to_string(self).map_err(|_| Error::BuildJSONError)
+    }
+}
+
+impl ToJSON for IdentityPrivateKeyPairs {
+    fn to_json(&self) -> Result<String, crate::types::DIDError> {        
+        serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
     }
 }

@@ -1,11 +1,13 @@
 use prople_crypto::EDDSA::{KeyPair, Signature};
-use rst_common::standard::serde::{Deserialize, Serialize};
+
+use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::with_cryptography::blake3::{self, Hash};
 
-use crate::types::Error;
-use crate::verifiable::types::ToJCS;
+use crate::types::DIDError;
+use crate::types::ToJCS;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct Proof {
     id: String,
 
@@ -89,10 +91,10 @@ impl Value {
         }
     }
 
-    pub fn transform(keypair: KeyPair, unsecured: Box<dyn ToJCS>) -> Result<(Hash, String), Error> {
+    pub fn transform(keypair: KeyPair, unsecured: Box<dyn ToJCS>) -> Result<(Hash, String), DIDError> {
         let tojcs = unsecured.to_jcs().map_err(|err| match err {
-            Error::GenerateVCError(msg) => Error::GenerateJSONJCSError(msg.to_string()),
-            _ => Error::GenerateJSONJCSError("unable to generate canonicalized json".to_string()),
+            DIDError::GenerateVCError(msg) => DIDError::GenerateJSONJCSError(msg.to_string()),
+            _ => DIDError::GenerateJSONJCSError("unable to generate canonicalized json".to_string()),
         })?;
 
         let toblake = blake3::hash(tojcs.as_bytes());
@@ -108,18 +110,23 @@ impl Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::verifiable::objects::{VC, VP};
-    use crate::verifiable::types::ToJCS;
-    use rst_common::with_cryptography::hex;
+
     use prople_crypto::errors::EddsaError;
+    use rst_common::standard::serde_json;
+    use rst_common::with_cryptography::hex;
+
+    use crate::verifiable::objects::{VC, VP};
+    use crate::types::ToJCS;
 
     #[derive(Serialize, Deserialize)]
+    #[serde(crate = "self::serde")]
     struct FakeCredentialProperties {
         pub user_agent: String,
         pub user_did: String,
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(crate = "self::serde")]
     struct FakeCredentialSubject {
         id: String,
         connection: FakeCredentialProperties,

@@ -1,8 +1,12 @@
-use crate::types::Error;
-use serde::{Deserialize, Serialize};
+use rst_common::standard::serde::{self, Deserialize, Serialize};
+use rst_common::standard::serde_json;
+
+use crate::context::ext::types::*;
+use crate::types::{DIDError, CONTEXT_VC, ToJSON};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(crate = "self::serde")]
 pub struct UserConnectionCredentialProperties {
     pub user_agent_address: String,
     pub user_did: String,
@@ -11,13 +15,14 @@ pub struct UserConnectionCredentialProperties {
 impl Default for UserConnectionCredentialProperties {
     fn default() -> Self {
         Self {
-            user_agent_address: String::from("https://schema.org/identifier"),
-            user_did: String::from("https://www.w3.org/2018/credentials/#VerifiableCredential"),
+            user_agent_address: String::from(CONTEXT_USER_AGENT_ADDRESS),
+            user_did: String::from(CONTEXT_VC),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(crate = "self::serde")]
 pub struct UserConnectionCredentialContext {
     #[serde(rename = "@context")]
     pub context: UserConnectionCredentialProperties,
@@ -33,6 +38,7 @@ impl UserConnectionCredentialContext {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
+#[serde(crate = "self::serde")]
 pub struct UserConnectionCredential {
     pub user_connection_credential: UserConnectionCredentialContext,
 }
@@ -43,9 +49,11 @@ impl UserConnectionCredential {
             user_connection_credential: context,
         }
     }
+}
 
-    pub fn to_json(&self) -> Result<String, Error> {
-        serde_json::to_string(self).map_err(|err| Error::GenerateJSONError(err.to_string()))
+impl ToJSON for UserConnectionCredential {
+    fn to_json(&self) -> Result<String, DIDError> {        
+        serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
     }
 }
 

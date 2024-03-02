@@ -27,28 +27,17 @@ impl Account {
     }
 
     pub fn from_str(val: String) -> Result<Self, Error> {
-        let base_decode = multibase::decode(val);
-        let decoded = match base_decode {
-            Ok(value) => {
-                let to_hex = String::from_utf8(value.1);
-                match to_hex {
-                    Ok(hex_val) => hex_val,
-                    Err(err) => return Err(Error::ParseHexError(err.to_string())),
-                }
-            }
-            Err(err) => return Err(Error::DecodeError(err.to_string())),
-        };
+        let decoded = multibase::decode(val)
+            .map(|val| String::from_utf8(val.1))
+            .map_err(|err| Error::DecodeError(err.to_string()))?
+            .map_err(|err| Error::ParseHexError(err.to_string()))?;
 
-        let pub_key = PubKey::from_hex(decoded);
-        match pub_key {
-            Ok(value) => Ok(Self { key: value }),
-            Err(err) => match err {
-                EddsaError::Common(CommonError::ParseHexError(msg)) => {
-                    Err(Error::ParseHexError(msg))
-                }
-                _ => Err(Error::InvalidPublicKey("invalid public key".to_string())),
-            },
-        }
+        PubKey::from_hex(decoded)
+            .map(|val| Self { key: val })
+            .map_err(|err| match err {
+                EddsaError::Common(CommonError::ParseHexError(msg)) => Error::ParseHexError(msg),
+                _ => Error::InvalidPublicKey("invalid public key".to_string()),
+            })
     }
 }
 

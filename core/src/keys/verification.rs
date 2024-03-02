@@ -49,17 +49,17 @@ impl Key {
         }
     }
 
-    pub fn generate(&self) -> Result<Pairs, Error> {
+    pub fn generate(&self) -> Pairs {
         let pub_key = self.keypair.pub_key();
         let priv_key = self.keypair.priv_key();
 
         let pub_key_hex = pub_key.to_hex();
         let pub_key_encoded = multibase::encode(Base58Btc, pub_key_hex.as_bytes());
 
-        Ok(Pairs {
+        Pairs {
             pub_key: pub_key_encoded,
             priv_key,
-        })
+        }
     }
 }
 
@@ -71,7 +71,6 @@ mod tests {
     fn test_generate_keypairs() {
         let verification = Key::new();
         let keypairs = verification.generate();
-        assert!(!keypairs.is_err());
-        assert!(keypairs.unwrap().is_valid())
+        assert!(keypairs.is_valid())
     }
 }

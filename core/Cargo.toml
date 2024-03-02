@@ -15,9 +15,6 @@ categories = ["cryptography"]
 
 [dependencies]
 rst-common = {version = "1.1.0", features = ["standard", "with-errors", "with-tokio", "with-logging", "with-cryptography", "with-tests"]}
-serde = {version = "~1", features = ["derive"] }
-thiserror = {version = "1.0.57"}
-serde_json = {version = "~1"}
 serde_jcs = {version ="0.1"}
 multibase = {version = "0.9"} 
 prople-crypto = {git = "https://github.com/prople/crypto.git"}

@@ -1,9 +1,10 @@
-use rst_common::standard::serde::{Deserialize, Serialize};
+use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
 use crate::types::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct Primary {
     pub id: DID,
     pub controller: DIDController,
@@ -16,6 +17,7 @@ pub struct Primary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct Doc {
     #[serde(rename = "@context")]
     pub context: Vec<DIDContext>,
@@ -103,13 +105,11 @@ impl Doc {
 
         self
     }
+}
 
-    pub fn to_json(&self) -> Result<String, Error> {
-        let json = serde_json::to_string(self);
-        match json {
-            Ok(value) => Ok(value),
-            Err(err) => Err(Error::GenerateDocError(err.to_string())),
-        }
+impl ToJSON for Doc {
+    fn to_json(&self) -> Result<String, DIDError> {     
+        serde_json::to_string(self).map_err(|err| DIDError::GenerateDocError(err.to_string()))
     }
 }
 
@@ -143,5 +143,4 @@ mod tests {
         assert!(doc.cap_invoke.is_none());
         assert_eq!(doc.assertion.unwrap().len(), 2);
     }
-
 }

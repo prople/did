@@ -1,3 +1,2 @@
-mod user_connection;
-
-pub use user_connection::*;
+pub mod types;
+pub mod user_connection;

@@ -1,9 +1,9 @@
-use rst_common::standard::serde::{Deserialize, Serialize};
-use rst_common::standard::serde_json::Value;
+use rst_common::standard::serde::{self, Deserialize, Serialize};
+use rst_common::standard::serde_json::{self, Value};
 
-use crate::types::Error;
+use crate::types::DIDError;
 use crate::verifiable::objects::Proof;
-use crate::verifiable::types::ToJCS;
+use crate::types::{ToJCS, ToJSON};
 
 pub type Context = String;
 pub type ID = String;
@@ -11,6 +11,7 @@ pub type Type = String;
 pub type SRI = String;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct VC {
     #[serde(rename = "@context")]
     contexts: Vec<Context>,
@@ -58,31 +59,21 @@ impl VC {
         self
     }
 
-    pub fn to_json(&self) -> Result<String, Error> {
-        let validation = self.validate();
-        match validation {
-            Ok(_) => {
-                serde_json::to_string(self).map_err(|err| Error::GenerateJSONError(err.to_string()))
-            }
-            Err(err) => Err(err),
-        }
-    }
-
-    fn validate(&self) -> Result<(), Error> {
+    fn validate(&self) -> Result<(), DIDError> {
         if self.contexts.is_empty() {
-            return Err(Error::GenerateVCError(String::from(
+            return Err(DIDError::GenerateVCError(String::from(
                 "vc_error: empty context",
             )));
         }
 
         if self.types.is_empty() {
-            return Err(Error::GenerateVCError(String::from(
+            return Err(DIDError::GenerateVCError(String::from(
                 "vc_error: empty types",
             )));
         }
 
         if self.credential_subject == Value::Null {
-            return Err(Error::GenerateVCError(String::from(
+            return Err(DIDError::GenerateVCError(String::from(
                 "vc_error: credential should not be null",
             )));
         }
@@ -91,12 +82,24 @@ impl VC {
     }
 }
 
-impl ToJCS for VC {
-    fn to_jcs(&self) -> Result<String, Error> {
+impl ToJSON for VC {
+    fn to_json(&self) -> Result<String, DIDError> {        
         let validation = self.validate();
         match validation {
             Ok(_) => {
-                serde_jcs::to_string(self).map_err(|err| Error::GenerateJSONError(err.to_string()))
+                serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
+            }
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl ToJCS for VC {
+    fn to_jcs(&self) -> Result<String, DIDError> {
+        let validation = self.validate();
+        match validation {
+            Ok(_) => {
+                serde_jcs::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
             }
             Err(err) => Err(err),
         }
@@ -108,12 +111,14 @@ mod tests {
     use super::*;
 
     #[derive(Serialize, Deserialize)]
+    #[serde(crate = "self::serde")]
     struct FakeCredentialProperties {
         pub user_agent: String,
         pub user_did: String,
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(crate = "self::serde")]
     struct FakeCredentialSubject {
         id: String,
         connection: FakeCredentialProperties,
@@ -179,7 +184,7 @@ mod tests {
         assert!(try_json.is_err());
 
         assert_eq!(
-            Error::GenerateVCError(String::from("vc_error: empty context")),
+            DIDError::GenerateVCError(String::from("vc_error: empty context")),
             try_json.unwrap_err()
         )
     }
@@ -194,7 +199,7 @@ mod tests {
         assert!(try_json.is_err());
 
         assert_eq!(
-            Error::GenerateVCError(String::from("vc_error: empty types")),
+            DIDError::GenerateVCError(String::from("vc_error: empty types")),
             try_json.unwrap_err()
         )
     }
@@ -210,7 +215,7 @@ mod tests {
         assert!(try_json.is_err());
 
         assert_eq!(
-            Error::GenerateVCError(String::from("vc_error: credential should not be null")),
+            DIDError::GenerateVCError(String::from("vc_error: credential should not be null")),
             try_json.unwrap_err()
         )
     }

@@ -1,10 +1,12 @@
-use serde::{Deserialize, Serialize};
+use rst_common::standard::serde::{self, Deserialize, Serialize};
+use rst_common::standard::serde_json;
 
-use crate::types::Error;
+use crate::types::{DIDError, ToJCS, ToJSON};
 use crate::verifiable::objects::{Proof, VC};
-use crate::verifiable::types::{Context, ToJCS, Type};
+use crate::verifiable::types::{Context, Type};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(crate = "self::serde")]
 pub struct VP {
     #[serde(rename = "@context")]
     contexts: Vec<Context>,
@@ -65,26 +67,17 @@ impl VP {
         self
     }
 
-    pub fn to_json(&self) -> Result<String, Error> {
-        match self.validate() {
-            Ok(_) => {
-                serde_json::to_string(self).map_err(|err| Error::GenerateJSONError(err.to_string()))
-            }
-            Err(err) => Err(err),
-        }
-    }
-
-    fn validate(&self) -> Result<(), Error> {
+    fn validate(&self) -> Result<(), DIDError> {
         if self.contexts.is_empty() {
-            return Err(Error::GenerateJSONError(String::from("vp: empty context")));
+            return Err(DIDError::GenerateJSONError(String::from("vp: empty context")));
         }
 
         if self.types.is_empty() {
-            return Err(Error::GenerateJSONError(String::from("vp: empty types")));
+            return Err(DIDError::GenerateJSONError(String::from("vp: empty types")));
         }
 
         if self.verifiable_credential.is_empty() {
-            return Err(Error::GenerateJSONError(String::from(
+            return Err(DIDError::GenerateJSONError(String::from(
                 "vp: empty credentials",
             )));
         }
@@ -93,11 +86,22 @@ impl VP {
     }
 }
 
-impl ToJCS for VP {
-    fn to_jcs(&self) -> Result<String, Error> {
+impl ToJSON for VP {
+    fn to_json(&self) -> Result<String, DIDError> {        
         match self.validate() {
             Ok(_) => {
-                serde_jcs::to_string(self).map_err(|err| Error::GenerateJSONError(err.to_string()))
+                serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
+            }
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl ToJCS for VP {
+    fn to_jcs(&self) -> Result<String, DIDError> {
+        match self.validate() {
+            Ok(_) => {
+                serde_jcs::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
             }
             Err(err) => Err(err),
         }
@@ -145,7 +149,7 @@ mod tests {
         let try_json = vp.to_json();
         assert!(try_json.is_err());
         assert_eq!(
-            Error::GenerateJSONError("vp: empty context".to_string()),
+            DIDError::GenerateJSONError("vp: empty context".to_string()),
             try_json.unwrap_err()
         )
     }
@@ -158,7 +162,7 @@ mod tests {
         let try_json = vp.to_json();
         assert!(try_json.is_err());
         assert_eq!(
-            Error::GenerateJSONError("vp: empty types".to_string()),
+            DIDError::GenerateJSONError("vp: empty types".to_string()),
             try_json.unwrap_err()
         )
     }
@@ -172,7 +176,7 @@ mod tests {
         let try_json = vp.to_json();
         assert!(try_json.is_err());
         assert_eq!(
-            Error::GenerateJSONError("vp: empty credentials".to_string()),
+            DIDError::GenerateJSONError("vp: empty credentials".to_string()),
             try_json.unwrap_err()
         )
     }

@@ -1,4 +1,3 @@
-mod base;
 mod proof;
 mod vc;
 mod vp;
@@ -6,7 +5,6 @@ mod vp;
 pub mod types {
     use super::*;
 
-    pub use base::ToJCS;
     pub use vc::{Context, Type, ID, SRI};
 }
 

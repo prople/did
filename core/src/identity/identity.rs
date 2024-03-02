@@ -31,33 +31,29 @@ impl Identity {
         self.identity.clone()
     }
 
-    pub fn account(&self) -> Result<String, Error> {
+    pub fn account(&self) -> Result<String, DIDError> {
         let identity = self.identity.clone();
         let value = identity.as_str().split(DID_SYNTAX_MARK);
         if value.clone().count() < 3 {
-            return Err(Error::InvalidDID);
+            return Err(DIDError::InvalidDID);
         }
 
-        let try_account = value.clone().last();
-        match try_account {
-            Some(value) => Ok(value.to_string()),
-            None => Err(Error::InvalidDID),
-        }
+        value
+            .clone()
+            .last()
+            .map(|val| val.to_string())
+            .ok_or(DIDError::InvalidDID)
     }
 
-    pub fn build_auth_method(&mut self) -> Result<(), Error> {
-        let verification_method = self
-            .build_verification_method()
-            .map_err(|_| Error::BuildAuthError)?;
+    pub fn build_auth_method(&mut self) -> Result<(), DIDError> {
+        let verification_method = self.build_verification_method();
 
         self.authentication = Some(verification_method);
         Ok(())
     }
 
-    pub fn build_assertion_method(&mut self) -> Result<(), Error> {
-        let verification_method = self
-            .build_verification_method()
-            .map_err(|_| Error::BuildAuthError)?;
+    pub fn build_assertion_method(&mut self) -> Result<(), DIDError> {
+        let verification_method = self.build_verification_method();
 
         self.assertion = Some(verification_method);
         Ok(())
@@ -114,19 +110,17 @@ impl Identity {
         doc
     }
 
-    fn build_verification_method(&self) -> Result<VerificationMethod, Error> {
+    fn build_verification_method(&self) -> VerificationMethod {
         let verification_key = VerificationKey::new();
-        let verification_pairs = verification_key
-            .generate()
-            .map_err(|_| Error::BuildAuthError)?;
+        let verification_pairs = verification_key.generate();
 
         let aggreement_key = AggreementKey::new();
         let aggreement_pairs = aggreement_key.generate();
 
-        Ok(VerificationMethod {
+        VerificationMethod {
             verification_pairs,
             aggreement_pairs,
-        })
+        }
     }
 }
 
