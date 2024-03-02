@@ -1,10 +1,17 @@
+use rst_common::with_errors::thiserror::{self, Error};
+
 use prople_crypto::errors::{CommonError, EddsaError};
 use prople_crypto::EDDSA::{KeyPair, PubKey};
 
-#[derive(Debug, PartialEq)]
-pub enum Error {
+#[derive(Debug, PartialEq, Error)]
+pub enum AccountError {
+    #[error("unable to decode: {0}")]
     DecodeError(String),
+    
+    #[error("unable to parse: {0}")]
     ParseHexError(String),
+    
+    #[error("invalid public key: {0}")]
     InvalidPublicKey(String),
 }
 
@@ -26,17 +33,17 @@ impl Account {
         multibase::encode(multibase::Base::Base58Btc, pub_key_hex.as_bytes())
     }
 
-    pub fn from_str(val: String) -> Result<Self, Error> {
+    pub fn from_str(val: String) -> Result<Self, AccountError> {
         let decoded = multibase::decode(val)
             .map(|val| String::from_utf8(val.1))
-            .map_err(|err| Error::DecodeError(err.to_string()))?
-            .map_err(|err| Error::ParseHexError(err.to_string()))?;
+            .map_err(|err| AccountError::DecodeError(err.to_string()))?
+            .map_err(|err| AccountError::ParseHexError(err.to_string()))?;
 
         PubKey::from_hex(decoded)
             .map(|val| Self { key: val })
             .map_err(|err| match err {
-                EddsaError::Common(CommonError::ParseHexError(msg)) => Error::ParseHexError(msg),
-                _ => Error::InvalidPublicKey("invalid public key".to_string()),
+                EddsaError::Common(CommonError::ParseHexError(msg)) => AccountError::ParseHexError(msg),
+                _ => AccountError::InvalidPublicKey("invalid public key".to_string()),
             })
     }
 }
@@ -68,7 +75,7 @@ mod tests {
         let account = Account::from_str(String::from("invalid"));
         assert!(account.is_err());
 
-        assert!(matches!(account, Err(Error::DecodeError(_))))
+        assert!(matches!(account, Err(AccountError::DecodeError(_))))
     }
 
     #[test]
@@ -77,6 +84,6 @@ mod tests {
         let account = Account::from_str(encoded_invalid);
         assert!(account.is_err());
 
-        assert!(matches!(account, Err(Error::ParseHexError(_))))
+        assert!(matches!(account, Err(AccountError::ParseHexError(_))))
     }
 }
