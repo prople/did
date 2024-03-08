@@ -1,7 +1,6 @@
 use rst_common::with_errors::thiserror::{self, Error};
 
-use prople_crypto::errors::{CommonError, EddsaError};
-use prople_crypto::EDDSA::{KeyPair, PubKey};
+use prople_crypto::EDDSA::{KeyPair, PubKey, Signature};
 
 #[derive(Debug, PartialEq, Error)]
 pub enum AccountError {
@@ -13,40 +12,46 @@ pub enum AccountError {
 
     #[error("invalid public key: {0}")]
     InvalidPublicKey(String),
+
+    #[error("encode pem failed: {0}")]
+    EncodePEMError(String),
+
+    #[error("decode pem failed: {0}")]
+    DecodePEMError(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Account {
-    key: PubKey,
+    pair: KeyPair,
 }
 
 impl Account {
     pub fn new() -> Self {
         let keypair = KeyPair::generate();
-        Self {
-            key: keypair.pub_key(),
-        }
+        Self { pair: keypair }
     }
 
-    pub fn build(&self) -> String {
-        let pub_key_hex = self.key.to_hex();
-        multibase::encode(multibase::Base::Base58Btc, pub_key_hex.as_bytes())
+    pub fn build_pem(&self) -> Result<String, AccountError> {
+        self.pair
+            .priv_key()
+            .to_pem()
+            .map_err(|err| AccountError::EncodePEMError(err.to_string()))
     }
 
-    pub fn from_str(val: String) -> Result<Self, AccountError> {
-        let decoded = multibase::decode(val)
-            .map(|val| String::from_utf8(val.1))
-            .map_err(|err| AccountError::DecodeError(err.to_string()))?
-            .map_err(|err| AccountError::ParseHexError(err.to_string()))?;
+    pub fn from_pem(val: String) -> Result<Self, AccountError> {
+        let account = KeyPair::from_pem(val)
+            .map(|val| Self { pair: val })
+            .map_err(|err| AccountError::DecodePEMError(err.to_string()))?;
 
-        PubKey::from_hex(decoded)
-            .map(|val| Self { key: val })
-            .map_err(|err| match err {
-                EddsaError::Common(CommonError::ParseHexError(msg)) => {
-                    AccountError::ParseHexError(msg)
-                }
-                _ => AccountError::InvalidPublicKey("invalid public key".to_string()),
-            })
+        Ok(account)
+    }
+
+    pub fn pubkey(&self) -> PubKey {
+        self.pair.pub_key()
+    }
+
+    pub fn signature(&self, message: &[u8]) -> Signature {
+        self.pair.signature(message)
     }
 }
 
@@ -55,37 +60,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_generate_build() {
+    fn test_generate_build_pem() {
         let account = Account::new();
-        let account_encoded = account.build();
-        assert!(account_encoded.starts_with("z"))
+        let account_pem = account.build_pem();
+        assert!(!account_pem.is_err());
+        assert!(!account_pem.unwrap().is_empty())
     }
 
     #[test]
     fn test_parse_account_from_encoded() {
         let account = Account::new();
-        let account_encoded = account.build();
-        let account_rebuild = Account::from_str(account_encoded.clone());
+        let account_pem = account.build_pem();
+        let account_rebuild = Account::from_pem(account_pem.unwrap());
         assert!(!account_rebuild.is_err());
 
-        let account_rebuild_encoded = account_rebuild.unwrap().build();
-        assert_eq!(account_rebuild_encoded, account_encoded)
+        let account_rebuild_pubkey = account_rebuild.unwrap().pubkey();
+        assert_eq!(
+            account_rebuild_pubkey.serialize(),
+            account.pubkey().serialize()
+        )
     }
 
     #[test]
     fn test_parse_account_error_invalid_input() {
-        let account = Account::from_str(String::from("invalid"));
+        let account = Account::from_pem(String::from("invalid"));
         assert!(account.is_err());
-
-        assert!(matches!(account, Err(AccountError::DecodeError(_))))
-    }
-
-    #[test]
-    fn test_parse_account_error_invalid_pub_key() {
-        let encoded_invalid = multibase::encode(multibase::Base::Base58Btc, "invalid".as_bytes());
-        let account = Account::from_str(encoded_invalid);
-        assert!(account.is_err());
-
-        assert!(matches!(account, Err(AccountError::ParseHexError(_))))
+        assert!(matches!(account, Err(AccountError::DecodePEMError(_))))
     }
 }

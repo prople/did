@@ -22,13 +22,13 @@ The *decentralized identity* is one of primary objectives from `Prople`. There i
 
 Each of user will have their own `DID` with this format:
 
-```
+```text
 did:prople:<base58btc_encoded_data>
 ```
 
 Example:
 
-```
+```text
 did:prople:z2xrsP3ExuJQMydq7hPg2d9ti3BKNoRSXE2b634vcdh9LKKujaBWLsPHoRgKcRCJ1ck7N5YcoU8ZmPwVqp5Hfnayj
 ```
 

@@ -41,8 +41,14 @@ pub enum DIDError {
     #[error("error build proof: {0}")]
     BuildProofError(String),
 
+    #[error("error build payload: {0}")]
+    BuildPayloadError(String),
+
     #[error("validation error: {0}")]
     ValidateError(String),
+
+    #[error("error decode json value: {0}")]
+    DecodeJSONError(String),
 
     #[error("error build auth")]
     BuildAuthError,
