@@ -1,6 +1,6 @@
 [package]
 name = "prople-did-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
 documentation = "https://docs.rs/prople-did-core"
@@ -10,6 +10,7 @@ description = "A set of core libraries to manage the DID data and objects based 
 license = "GPL-3.0-only"
 keywords = ["prople", "cryptography"]
 categories = ["cryptography"]
+readme = "README.md"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
