@@ -1,11 +1,12 @@
 [package]
 name = "prople-did-core"
-version = "1.0.0"
+version = "0.1.0"
 edition = "2021"
 authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
+documentation = "https://docs.rs/prople-did-core"
 repository = "https://github.com/prople/did"
 rust-version = "1.74"
-description = "A set of libraries and function helpers to maintain DID (Decentralized Identity)"
+description = "A set of core libraries to manage the DID data and objects based on Prople system requirements"
 license = "GPL-3.0-only"
 keywords = ["prople", "cryptography"]
 categories = ["cryptography"]
@@ -17,4 +18,7 @@ categories = ["cryptography"]
 rst-common = {version = "1.2.0", features = ["standard", "with-errors", "with-tokio", "with-logging", "with-cryptography", "with-tests"]}
 serde_jcs = {version ="0.1"}
 multibase = {version = "0.9"} 
-prople-crypto = {git = "https://github.com/prople/crypto.git"}
+prople-crypto = {version = "~0.1"}
+
+[lib]
+doctest = false

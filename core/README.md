@@ -139,3 +139,7 @@ Example of *unsecured (without proof)* `VP` :
   }]
 }
 ```
+
+## Installation
+[dependencies]
+prople-did-core = {version = "0.1.0"}
