@@ -141,5 +141,8 @@ Example of *unsecured (without proof)* `VP` :
 ```
 
 ## Installation
+
+```toml
 [dependencies]
 prople-did-core = {version = "0.1.0"}
+```
