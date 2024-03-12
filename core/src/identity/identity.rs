@@ -1,6 +1,6 @@
 use crate::doc::types::{Doc, Primary, ToDoc};
 use crate::keys::{
-    AggreementKey, AggreementPairs, IdentityPrivateKeyPairs, IdentityPrivateKeyPairsBuilder,
+    AgreementKey, AgreementPairs, IdentityPrivateKeyPairs, IdentityPrivateKeyPairsBuilder,
     KeySecureBuilder, KeySecureError, PrivateKeyPairs, VerificationKey, VerificationPairs,
 };
 use crate::types::*;
@@ -13,7 +13,7 @@ use crate::types::*;
 #[derive(Debug, Clone)]
 struct VerificationMethod {
     pub verification_pairs: VerificationPairs,
-    pub aggreement_pairs: AggreementPairs,
+    pub agreement_pairs: AgreementPairs,
 }
 
 /// `Identity` is an object that hold a `DID Syntax` with specific `Prople DID Method` which contains
@@ -73,12 +73,12 @@ impl Identity {
         let verification_key = VerificationKey::new();
         let verification_pairs = verification_key.generate();
 
-        let aggreement_key = AggreementKey::new();
-        let aggreement_pairs = aggreement_key.generate();
+        let agreement_key = AgreementKey::new();
+        let agreement_pairs = agreement_key.generate();
 
         VerificationMethod {
             verification_pairs,
-            aggreement_pairs,
+            agreement_pairs,
         }
     }
 }
@@ -106,7 +106,7 @@ impl ToDoc for Identity {
                 id: auth_aggreement_id,
                 controller: self.identity.clone(),
                 verification_type: VERIFICATION_TYPE_X25519.to_string(),
-                multibase: auth.aggreement_pairs.clone().pub_key,
+                multibase: auth.agreement_pairs.clone().pub_key,
             };
 
             doc.add_authentication(auth_verification_primary)
@@ -125,7 +125,7 @@ impl ToDoc for Identity {
                 id: assertion_aggreement_id,
                 controller: self.identity.clone(),
                 verification_type: VERIFICATION_TYPE_X25519.to_string(),
-                multibase: assertion.aggreement_pairs.clone().pub_key,
+                multibase: assertion.agreement_pairs.clone().pub_key,
             };
 
             doc.add_assertion(assertion_verification_primary)
@@ -151,7 +151,7 @@ impl IdentityPrivateKeyPairsBuilder for Identity {
                 .map_err(|_| KeySecureError::BuildIdentityPrivateKeysError)?;
 
             let auth_aggrement_keysecure = authentication
-                .aggreement_pairs
+                .agreement_pairs
                 .clone()
                 .build_keysecure(password.clone())
                 .map_err(|_| KeySecureError::BuildIdentityPrivateKeysError)?;
@@ -170,7 +170,7 @@ impl IdentityPrivateKeyPairsBuilder for Identity {
                 .map_err(|_| KeySecureError::BuildIdentityPrivateKeysError)?;
 
             let assertion_aggrement_keysecure = assertion
-                .aggreement_pairs
+                .agreement_pairs
                 .clone()
                 .build_keysecure(password.clone())
                 .map_err(|_| KeySecureError::BuildIdentityPrivateKeysError)?;
