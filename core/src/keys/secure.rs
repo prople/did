@@ -56,10 +56,6 @@ impl IdentityPrivateKeyPairs {
             assertion: None,
         }
     }
-
-    pub fn to_json(&self) -> Result<String, Error> {
-        serde_json::to_string(self).map_err(|_| Error::BuildJSONError)
-    }
 }
 
 impl ToJSON for IdentityPrivateKeyPairs {
