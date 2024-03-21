@@ -1,6 +1,6 @@
-use prople_crypto::base::ToKeySecure;
-use prople_crypto::KeySecure::KeySecure;
-use prople_crypto::ECDH::{self as X25519, KeyPair};
+use prople_crypto::keysecure::types::ToKeySecure;
+use prople_crypto::keysecure::KeySecure;
+use prople_crypto::ecdh::keypair::KeyPair;
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
@@ -30,13 +30,13 @@ impl KeySecureBuilder for Pairs {
 ///
 /// The public and private keys will be generated from this object
 pub struct Key {
-    keypair: X25519::KeyPair,
+    keypair: KeyPair,
 }
 
 impl Key {
     pub fn new() -> Self {
         Self {
-            keypair: X25519::KeyPair::generate(),
+            keypair: KeyPair::generate(),
         }
     }
 

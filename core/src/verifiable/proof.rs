@@ -1,4 +1,5 @@
-use prople_crypto::EDDSA::{KeyPair, Signature};
+use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::signature::Signature;
 
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::with_cryptography::blake3::{self, Hash};
@@ -123,7 +124,7 @@ impl Value {
 mod tests {
     use super::*;
 
-    use prople_crypto::errors::EddsaError;
+    use prople_crypto::eddsa::types::errors::EddsaError;
     use rst_common::standard::serde_json;
     use rst_common::with_cryptography::hex;
 

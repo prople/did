@@ -19,7 +19,7 @@ readme = "README.md"
 rst-common = {version = "1.2.0", features = ["standard", "with-errors", "with-tokio", "with-logging", "with-cryptography", "with-tests"]}
 serde_jcs = {version ="0.1"}
 multibase = {version = "0.9"} 
-prople-crypto = {version = "~0.1"}
+prople-crypto = {version = "~0.2"}
 
 [lib]
 doctest = false

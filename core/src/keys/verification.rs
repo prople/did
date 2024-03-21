@@ -1,8 +1,9 @@
 use multibase::{self, Base::Base58Btc};
 
-use prople_crypto::base::ToKeySecure;
-use prople_crypto::KeySecure::KeySecure;
-use prople_crypto::EDDSA::{self as Ed25519, PrivKey};
+use prople_crypto::keysecure::types::ToKeySecure;
+use prople_crypto::keysecure::KeySecure;
+use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::privkey::PrivKey;
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
@@ -42,13 +43,13 @@ impl KeySecureBuilder for Pairs {
 
 /// `Key` used to hold a key pair from [`Ed25519::KeyPair`]
 pub struct Key {
-    keypair: Ed25519::KeyPair,
+    keypair: KeyPair,
 }
 
 impl Key {
     pub fn new() -> Self {
         Self {
-            keypair: Ed25519::KeyPair::generate(),
+            keypair: KeyPair::generate(),
         }
     }
 

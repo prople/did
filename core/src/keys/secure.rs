@@ -1,7 +1,7 @@
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
-use prople_crypto::KeySecure::KeySecure;
+use prople_crypto::keysecure::KeySecure;
 
 use crate::types::{DIDError, ToJSON};
 
