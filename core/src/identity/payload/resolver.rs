@@ -48,19 +48,25 @@ impl AllowedDID {
 #[serde(crate = "self::serde")]
 pub struct Resolver {
     address: Address,
-    allowed_did: Vec<AllowedDID>,
+    allowed_did: Option<Vec<AllowedDID>>,
 }
 
 impl Resolver {
     pub fn new(address: Address) -> Self {
         Self {
             address,
-            allowed_did: Vec::new(),
+            allowed_did: Some(Vec::new()),
         }
     }
 
     pub fn add_did(&mut self, did: AllowedDID) -> &mut Self {
-        self.allowed_did.push(did);
+        if let Some(allowed) = &self.allowed_did {
+            let mut new_allowed = allowed.to_owned();
+            new_allowed.push(did);
+
+            self.allowed_did = Some(new_allowed)
+        }
+        
         self
     }
 }

@@ -2,6 +2,7 @@ use rst_common::with_errors::thiserror::{self, Error};
 
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::pubkey::PubKey;
+use prople_crypto::eddsa::privkey::PrivKey;
 use prople_crypto::eddsa::signature::Signature;
 
 #[derive(Debug, PartialEq, Error)]
@@ -50,6 +51,10 @@ impl Account {
 
     pub fn pubkey(&self) -> PubKey {
         self.pair.pub_key()
+    }
+
+    pub fn privkey(&self) -> PrivKey {
+        self.pair.priv_key()
     }
 
     pub fn signature(&self, message: &[u8]) -> Signature {

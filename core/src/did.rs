@@ -9,14 +9,14 @@ use crate::identity::types::Identity;
 use crate::types::*;
 
 /// `IdentityPayload` used to as primary data structure for account key
-/// 
+///
 /// Previous implementation the account key used as main DID key syntax
 /// is using Base58BTC format from the generated public key `EdDSA`. New implementation
 /// is using this data structure that will generate to JSON and encode it with Base58BTC
-/// 
+///
 /// The purpose using this data structure is to provide a self-describe data key,
 /// so when people got the DID account key, they will know how to resolve the DID document
-/// but still providing secured data by giving `hash` and `signature` 
+/// but still providing secured data by giving `hash` and `signature`
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct IdentityPayload {
@@ -28,9 +28,9 @@ pub struct IdentityPayload {
 impl IdentityPayload {
     /// `new` used to generate new [`IdentityPayload`] based on given [`Payload`] data
     /// structure
-    /// 
+    ///
     /// The given payload will be hashed and make the signature of it using the account
-    /// private key 
+    /// private key
     pub fn new(payload: Payload) -> Result<Self, DIDError> {
         let payload_account = payload
             .clone()
@@ -72,17 +72,15 @@ impl DID {
     }
 
     pub fn identity(&self) -> Result<Identity, DIDError> {
-        let payload_json = self.payload.to_json()?; 
+        let payload_json = self.payload.to_json()?;
         let base58_encoded = multibase::encode(Base58Btc, payload_json.as_bytes());
-        
+
         let id = format!(
             "{}:{}:{}",
-            DID_SYNTAX_SCHEME,
-            DID_SYNTAX_METHOD,
-            base58_encoded
+            DID_SYNTAX_SCHEME, DID_SYNTAX_METHOD, base58_encoded
         );
 
-        Ok(Identity::new(id)) 
+        Ok(Identity::new(id))
     }
 }
 
@@ -91,15 +89,15 @@ mod tests {
     use super::*;
     use crate::doc::types::ToDoc;
     use crate::identity::payload::account::Account;
-    use crate::identity::payload::resolver::{Resolver, Address, AddressType};
+    use crate::identity::payload::resolver::{Address, AddressType, Resolver};
     use crate::keys::IdentityPrivateKeyPairsBuilder;
 
     fn generate_identity_payload() -> IdentityPayload {
-        let address = Address::new(AddressType::Peer, "addres".to_string()); 
+        let address = Address::new(AddressType::Peer, "addres".to_string());
         let resolver = Resolver::new(address);
         let account = Account::new();
         let payload = Payload::new(account, resolver);
-        
+
         let identity_payload = IdentityPayload::new(payload).unwrap();
         identity_payload
     }
@@ -111,7 +109,7 @@ mod tests {
         let try_identity = did.identity();
         assert!(!try_identity.is_err());
 
-        let identity = try_identity.unwrap(); 
+        let identity = try_identity.unwrap();
         assert!(identity.value().contains(DID_SYNTAX_SCHEME));
         assert!(identity.value().contains(DID_SYNTAX_METHOD));
     }
@@ -120,11 +118,11 @@ mod tests {
     fn test_get_account() {
         let identity_payload = generate_identity_payload();
         let did = DID::new(identity_payload);
-        
+
         let try_identity = did.identity();
         assert!(!try_identity.is_err());
 
-        let identity = try_identity.unwrap(); 
+        let identity = try_identity.unwrap();
         let try_account = identity.account();
         assert!(!try_account.is_err());
 
@@ -156,7 +154,7 @@ mod tests {
     fn test_generate_identity_key_pairs() {
         let identity_payload = generate_identity_payload();
         let did = DID::new(identity_payload);
-        
+
         let mut identity = did.identity().unwrap();
 
         let try_build_auth = identity.build_auth_method();

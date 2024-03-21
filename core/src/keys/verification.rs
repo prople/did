@@ -1,9 +1,9 @@
 use multibase::{self, Base::Base58Btc};
 
-use prople_crypto::keysecure::types::ToKeySecure;
-use prople_crypto::keysecure::KeySecure;
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::privkey::PrivKey;
+use prople_crypto::keysecure::types::ToKeySecure;
+use prople_crypto::keysecure::KeySecure;
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 

@@ -1,6 +1,6 @@
 //! `payload` module contain a [`Payload`] and [`Resolver`] objects including
 //! hash and signature helper's functions
-//! 
+//!
 //! This module used to generate this kind of data
 //! ```json
 //! {
@@ -24,9 +24,9 @@
 //!   "hash": "<sha256_of_payload>",
 //!   "signature": "<signature_of_payload>"
 //! }
-//! ``` 
-//! 
-//! This kind of data will be encoded using `multibase` through `Base58btc` format then will be used 
+//! ```
+//!
+//! This kind of data will be encoded using `multibase` through `Base58btc` format then will be used
 //! as DID account key
 use rst_common::standard::chrono::Utc;
 use rst_common::standard::serde::{self, Deserialize, Serialize};

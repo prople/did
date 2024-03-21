@@ -1,6 +1,6 @@
+use prople_crypto::ecdh::keypair::KeyPair;
 use prople_crypto::keysecure::types::ToKeySecure;
 use prople_crypto::keysecure::KeySecure;
-use prople_crypto::ecdh::keypair::KeyPair;
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
