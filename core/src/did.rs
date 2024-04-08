@@ -46,6 +46,10 @@ impl DID {
 
         Ok(Identity::new(id))
     }
+
+    pub fn account(&self) -> Account {
+        self.account.to_owned()
+    }
 }
 
 #[cfg(test)]
