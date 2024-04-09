@@ -1,8 +1,8 @@
 //! `did` module used to generated the `DID Syntax` based on generated [`IdentityPayload`] data
 use multibase::Base::Base58Btc;
 
-use rst_common::with_cryptography::sha2::{Digest, Sha384};
 use rst_common::with_cryptography::blake3;
+use rst_common::with_cryptography::sha2::{Digest, Sha384};
 
 use crate::account::Account;
 use crate::identity::types::Identity;
@@ -15,21 +15,23 @@ use crate::types::*;
 /// ```text
 ///     did:prople:<base58btc_encoded_data>
 /// ````
-/// 
+///
 /// The **encoded_data** will be a generated public key in bytes
 pub struct DID {
-    account: Account
+    account: Account,
 }
 
 impl DID {
     pub fn new() -> Self {
-        Self { account: Account::new() }
+        Self {
+            account: Account::new(),
+        }
     }
 
     pub fn identity(&self) -> Result<Identity, DIDError> {
         let pubkey = self.account.pubkey();
         let pubkey_in_bytes = pubkey.serialize();
-        
+
         let mut sha3_hasher = Sha384::new();
         sha3_hasher.update(pubkey_in_bytes);
 

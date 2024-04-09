@@ -1,8 +1,8 @@
 use rst_common::with_errors::thiserror::{self, Error};
 
 use prople_crypto::eddsa::keypair::KeyPair;
-use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::privkey::PrivKey;
+use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
 
 #[derive(Debug, PartialEq, Error)]

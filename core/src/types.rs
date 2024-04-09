@@ -21,7 +21,7 @@ pub const VERIFICATION_TYPE_ED25519: &str = "Ed25519VerificationKey2020";
 pub const VERIFICATION_TYPE_X25519: &str = "X25519KeyAgreementKey2020";
 
 /// `DIDError` define all possible errors that will be happened from all available components
-#[derive(Debug, PartialEq, Error)]
+#[derive(Debug, PartialEq, Error, Clone)]
 pub enum DIDError {
     #[error("invalid did")]
     InvalidDID,
@@ -38,6 +38,9 @@ pub enum DIDError {
     #[error("error generate VC: {0}")]
     GenerateVCError(String),
 
+    #[error("error generate hashlink: {0}")]
+    GenerateHashLinkError(String),
+
     #[error("error build proof: {0}")]
     BuildProofError(String),
 
@@ -49,6 +52,9 @@ pub enum DIDError {
 
     #[error("error decode json value: {0}")]
     DecodeJSONError(String),
+
+    #[error("error hashlink: {0}")]
+    HashLinkError(String),
 
     #[error("error build auth")]
     BuildAuthError,

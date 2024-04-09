@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+pub mod hashlink;
 pub mod keys;
 pub mod types;
 
