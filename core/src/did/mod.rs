@@ -28,6 +28,14 @@ impl DID {
         }
     }
 
+    pub fn from_pem(val: String) -> Result<Self, DIDError> {
+        let did = Account::from_pem(val)
+            .map(|account| Self { account })
+            .map_err(|_| DIDError::InvalidPEM)?;
+
+        Ok(did)
+    }
+
     pub fn identity(&self) -> Result<Identity, DIDError> {
         let pubkey = self.account.pubkey();
         let pubkey_in_bytes = pubkey.serialize();
@@ -69,6 +77,17 @@ mod tests {
         let identity = try_identity.unwrap();
         assert!(identity.value().contains(DID_SYNTAX_SCHEME));
         assert!(identity.value().contains(DID_SYNTAX_METHOD));
+    }
+
+    #[test]
+    fn test_regenerate_from_pem() {
+        let did = DID::new();
+        let pem = did.account().build_pem();
+        assert!(!pem.is_err());
+
+        let did_regenerate = DID::from_pem(pem.unwrap());
+        assert!(!did_regenerate.is_err());
+        assert_eq!(did.identity().unwrap().value(), did_regenerate.unwrap().identity().unwrap().value())
     }
 
     #[test]

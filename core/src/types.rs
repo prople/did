@@ -30,6 +30,9 @@ pub enum DIDError {
     #[error("invalid did")]
     InvalidDID,
 
+    #[error("invalid pem")]
+    InvalidPEM,
+
     #[error("error generate DID DOC: {0}")]
     GenerateDocError(String),
 
