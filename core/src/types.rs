@@ -20,6 +20,10 @@ pub const CONTEXT_VC: &str = "https://www.w3.org/2018/credentials/#VerifiableCre
 pub const VERIFICATION_TYPE_ED25519: &str = "Ed25519VerificationKey2020";
 pub const VERIFICATION_TYPE_X25519: &str = "X25519KeyAgreementKey2020";
 
+/// `BLAKE3_HASH_CODE` is our default used hash function
+/// The code itself taken from here: https://github.com/multiformats/multicodec/blob/master/table.csv#L21
+pub const BLAKE3_HASH_CODE: u64 = 0x1e;
+
 /// `DIDError` define all possible errors that will be happened from all available components
 #[derive(Debug, PartialEq, Error, Clone)]
 pub enum DIDError {
