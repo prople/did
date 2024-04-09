@@ -8,6 +8,10 @@ use crate::account::Account;
 use crate::identity::types::Identity;
 use crate::types::*;
 
+pub mod query;
+
+use query::Params;
+
 /// `DID` is a main object used to generate an account entity in specific format
 /// which is `DID Syntax`
 ///
@@ -57,6 +61,19 @@ impl DID {
         Ok(Identity::new(id))
     }
 
+    pub fn build_uri(&self, params: Option<Params>) -> Result<String, DIDError> {
+        let identity = self.identity()?;
+        let primary = identity.value();
+
+        match params {
+            Some(query_params) => query_params
+                .build_query()
+                .map(|val| format!("{}?{}", primary, val))
+                .ok_or(DIDError::BuildURIError),
+            None => Ok(primary),
+        }
+    }
+
     pub fn account(&self) -> Account {
         self.account.to_owned()
     }
@@ -87,7 +104,10 @@ mod tests {
 
         let did_regenerate = DID::from_pem(pem.unwrap());
         assert!(!did_regenerate.is_err());
-        assert_eq!(did.identity().unwrap().value(), did_regenerate.unwrap().identity().unwrap().value())
+        assert_eq!(
+            did.identity().unwrap().value(),
+            did_regenerate.unwrap().identity().unwrap().value()
+        )
     }
 
     #[test]
@@ -141,5 +161,34 @@ mod tests {
 
         let try_private_key_pairs_in_json = try_private_key_pairs.unwrap().to_json();
         assert!(!try_private_key_pairs_in_json.is_err());
+    }
+
+    #[test]
+    fn test_build_did_uri_with_params() {
+        let did = DID::new();
+
+        let params = Params{
+            address: Some("test-addr".to_string()),
+            hl: Some("test-hl".to_string()),
+            service: Some("test-svc".to_string()) 
+        };
+
+        let uri = did.build_uri(Some(params));
+        assert!(!uri.is_err());
+
+        let did_primary = did.identity().unwrap().value();
+        let did_query_params = "service=test-svc&address=test-addr&hl=test-hl".to_string();
+        let did_uri = format!("{}?{}", did_primary, did_query_params);
+        assert_eq!(did_uri, uri.unwrap())
+    }
+
+    #[test]
+    fn test_build_did_uri_without_params() {
+        let did = DID::new();
+        let uri = did.build_uri(None);
+        assert!(!uri.is_err());
+        
+        let did_primary = did.identity().unwrap().value();
+        assert_eq!(uri.unwrap(), did_primary)
     }
 }

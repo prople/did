@@ -33,6 +33,9 @@ pub enum DIDError {
     #[error("invalid pem")]
     InvalidPEM,
 
+    #[error("error generate multiaddr: {0}")]
+    GenerateMultiAddrError(String),
+
     #[error("error generate DID DOC: {0}")]
     GenerateDocError(String),
 
@@ -68,6 +71,9 @@ pub enum DIDError {
 
     #[error("error build assertion")]
     BuildAssertionError,
+
+    #[error("error build DID uri")]
+    BuildURIError,
 
     #[error("error build DID DOC")]
     BuildDocError,
