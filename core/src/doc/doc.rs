@@ -8,7 +8,7 @@ use crate::types::*;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct Primary {
-    pub id: DID,
+    pub id: DIDSyntax,
     pub controller: DIDController,
 
     #[serde(rename = "type")]
@@ -28,7 +28,7 @@ pub struct Doc {
     #[serde(rename = "@context")]
     pub context: Vec<DIDContext>,
 
-    pub id: DID,
+    pub id: DIDSyntax,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub authentication: Option<Vec<Primary>>,

@@ -2,7 +2,7 @@
 
 use rst_common::with_errors::thiserror::{self, Error};
 
-pub type DID = String;
+pub type DIDSyntax = String;
 pub type DIDController = String;
 pub type DIDMultibase = String;
 pub type DIDVerificationKeyType = String;
@@ -68,6 +68,9 @@ pub enum DIDError {
 
     #[error("error hashlink: {0}")]
     HashLinkError(String),
+
+    #[error("error parse uri: {0}")]
+    ParseURIError(String),
 
     #[error("error build auth")]
     BuildAuthError,

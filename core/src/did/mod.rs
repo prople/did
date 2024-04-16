@@ -83,6 +83,40 @@ impl DID {
         }
     }
 
+    pub fn parse_uri(uri: String) -> Result<(String, Params), DIDError> {
+        let splitted = uri.as_str().split("?").collect::<Vec<&str>>();
+        if splitted.len() < 1 {
+            return Err(DIDError::ParseURIError("invalid given uri".to_string()))
+        }
+
+        let did = splitted[0].to_string();
+        let mut params = Params::default();
+
+        if splitted.len() > 1 {
+            let queries = splitted[1].split("&").collect::<Vec<&str>>();
+            for query in queries {
+                let splitted_param = query.split("=").collect::<Vec<&str>>();
+                if splitted_param.len() <= 1 {
+                    continue
+                }
+
+                if splitted_param[0] == "service" {
+                    params.service = Some(splitted_param[1].to_string()) 
+                }
+                
+                if splitted_param[0] == "address" {
+                    params.address = Some(splitted_param[1].to_string()) 
+                }
+                
+                if splitted_param[0] == "hl" {
+                    params.hl = Some(splitted_param[1].to_string()) 
+                }
+            }
+        } 
+
+        Ok((did, params))
+    }
+
     pub fn account(&self) -> Account {
         self.account.to_owned()
     }
@@ -90,9 +124,10 @@ impl DID {
 
 #[cfg(test)]
 mod tests {
-    use prople_crypto::keysecure::types::ToKeySecure;
-
     use super::*;
+    
+    use prople_crypto::keysecure::types::ToKeySecure;
+   
     use crate::doc::types::ToDoc;
     use crate::keys::IdentityPrivateKeyPairsBuilder;
 
@@ -241,5 +276,42 @@ mod tests {
 
         let try_rebuild_did = DID::from_keysecure("invalid".to_string(), keysecure);
         assert!(try_rebuild_did.is_err());
+    }
+
+    #[test]
+    fn test_parse_uri_with_full_queries() {
+        let uri = "did:prople:test?service=test-svc&address=test-addr&hl=test-hl".to_string();
+        let try_parsed = DID::parse_uri(uri);
+        assert!(!try_parsed.is_err());
+
+        let parsed = try_parsed.unwrap();
+        assert_eq!(parsed.0, "did:prople:test".to_string());
+        assert_eq!(parsed.1.address, Some("test-addr".to_string()));
+        assert_eq!(parsed.1.service, Some("test-svc".to_string()));
+        assert_eq!(parsed.1.hl, Some("test-hl".to_string()));
+    }
+
+    #[test]
+    fn test_parse_uri_with_single_query() {
+        let uri = "did:prople:test?service=test-svc".to_string();
+        let try_parsed = DID::parse_uri(uri);
+        assert!(!try_parsed.is_err());
+        
+        let parsed = try_parsed.unwrap();
+        assert_eq!(parsed.0, "did:prople:test".to_string());
+        assert_eq!(parsed.1.service, Some("test-svc".to_string()));
+    }
+
+    #[test]
+    fn test_parse_uri_without_queries() {
+        let uri = "did:prople:test".to_string();
+        let try_parsed = DID::parse_uri(uri);
+        assert!(!try_parsed.is_err());
+
+        let parsed = try_parsed.unwrap();
+        assert_eq!(parsed.0, "did:prople:test".to_string());
+        assert_eq!(parsed.1.service, None);
+        assert_eq!(parsed.1.address, None);
+        assert_eq!(parsed.1.hl, None);
     }
 }
