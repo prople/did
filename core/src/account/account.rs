@@ -1,9 +1,16 @@
+use rst_common::with_cryptography::hex;
 use rst_common::with_errors::thiserror::{self, Error};
+
+use prople_crypto::aead::{Key, AEAD};
+use prople_crypto::keysecure::KeySecure;
 
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::privkey::PrivKey;
 use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
+
+use prople_crypto::passphrase::kdf_params::KdfParams;
+use prople_crypto::passphrase::Passphrase;
 
 #[derive(Debug, PartialEq, Error)]
 pub enum AccountError {
@@ -49,6 +56,44 @@ impl Account {
         Ok(account)
     }
 
+    pub fn from_keysecure(password: String, keysecure: KeySecure) -> Result<Self, AccountError> {
+        let encrypted_text = keysecure.crypto.cipher_text;
+        let decoded_encrypted_text = hex::decode(encrypted_text)
+            .map_err(|err| AccountError::DecodeError(err.to_string()))?;
+
+        let kdf_params = keysecure.crypto.kdf_params;
+        let passphrase_kdf_params = KdfParams {
+            m_cost: kdf_params.params.m_cost,
+            p_cost: kdf_params.params.p_cost,
+            t_cost: kdf_params.params.t_cost,
+            output_len: kdf_params.params.output_len,
+        };
+
+        let kdf = Passphrase::new(passphrase_kdf_params);
+        let salt_vec = kdf_params.salt.as_bytes().to_vec();
+        let kdf_hash = kdf
+            .hash(password, salt_vec.clone())
+            .map_err(|err| AccountError::DecodeError(err.to_string()))?;
+
+        let nonce = keysecure.crypto.cipher_params.nonce;
+        let nonce_decoded =
+            hex::decode(nonce).map_err(|err| AccountError::DecodeError(err.to_string()))?;
+
+        let nonce_value: [u8; 24] = nonce_decoded
+            .clone()
+            .try_into()
+            .map_err(|_| AccountError::DecodeError("unable to decode nonce".to_string()))?;
+
+        let key = Key::generate(kdf_hash, nonce_value);
+        let decrypted = AEAD::decrypt(&key, &decoded_encrypted_text)
+            .map_err(|err| AccountError::DecodeError(err.to_string()))?;
+
+        let to_pem = String::from_utf8(decrypted)
+            .map_err(|err| AccountError::DecodeError(err.to_string()))?;
+
+        Account::from_pem(to_pem)
+    }
+
     pub fn pubkey(&self) -> PubKey {
         self.pair.pub_key()
     }
@@ -64,6 +109,8 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
+    use prople_crypto::keysecure::types::ToKeySecure;
+
     use super::*;
 
     #[test]
@@ -93,5 +140,35 @@ mod tests {
         let account = Account::from_pem(String::from("invalid"));
         assert!(account.is_err());
         assert!(matches!(account, Err(AccountError::DecodePEMError(_))))
+    }
+
+    #[test]
+    fn test_build_from_keysecure() {
+        let account = Account::new();
+        let try_pem = account.privkey().to_pem();
+        assert!(!try_pem.is_err());
+
+        let original_pem = try_pem.unwrap();
+        let try_keysecure = account.privkey().to_keysecure("password".to_string());
+        assert!(!try_keysecure.is_err());
+
+        let keysecure = try_keysecure.unwrap();
+        let try_rebuild_account = Account::from_keysecure("password".to_string(), keysecure);
+        assert!(!try_rebuild_account.is_err());
+
+        let rebuild_account = try_rebuild_account.unwrap();
+        let rebuild_account_pem = rebuild_account.privkey().to_pem().unwrap();
+        assert_eq!(rebuild_account_pem, original_pem)
+    }
+
+    #[test]
+    fn test_build_from_keysecure_invalid_password() {
+        let account = Account::new();
+        let try_keysecure = account.privkey().to_keysecure("password".to_string());
+        assert!(!try_keysecure.is_err());
+
+        let keysecure = try_keysecure.unwrap();
+        let try_rebuild_account = Account::from_keysecure("invalid".to_string(), keysecure);
+        assert!(try_rebuild_account.is_err());
     }
 }

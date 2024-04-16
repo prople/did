@@ -15,4 +15,4 @@ pub mod multi {
     pub use multiaddr as addr;
     pub use multibase as base;
     pub use multihash as hash;
-} 
+}

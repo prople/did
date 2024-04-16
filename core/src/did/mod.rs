@@ -4,6 +4,8 @@ use multibase::Base::Base58Btc;
 use rst_common::with_cryptography::blake3;
 use rst_common::with_cryptography::sha2::{Digest, Sha384};
 
+use prople_crypto::keysecure::KeySecure;
+
 use crate::account::Account;
 use crate::identity::types::Identity;
 use crate::types::*;
@@ -21,6 +23,7 @@ use query::Params;
 /// ````
 ///
 /// The **encoded_data** will be a generated public key in bytes
+#[derive(Debug)]
 pub struct DID {
     account: Account,
 }
@@ -38,6 +41,12 @@ impl DID {
             .map_err(|_| DIDError::InvalidPEM)?;
 
         Ok(did)
+    }
+
+    pub fn from_keysecure(password: String, keysecure: KeySecure) -> Result<Self, DIDError> {
+        Account::from_keysecure(password, keysecure)
+            .map(|val| Self { account: val })
+            .map_err(|err| DIDError::InvalidKeysecure(err.to_string()))
     }
 
     pub fn identity(&self) -> Result<Identity, DIDError> {
@@ -81,6 +90,8 @@ impl DID {
 
 #[cfg(test)]
 mod tests {
+    use prople_crypto::keysecure::types::ToKeySecure;
+
     use super::*;
     use crate::doc::types::ToDoc;
     use crate::keys::IdentityPrivateKeyPairsBuilder;
@@ -167,10 +178,10 @@ mod tests {
     fn test_build_did_uri_with_params() {
         let did = DID::new();
 
-        let params = Params{
+        let params = Params {
             address: Some("test-addr".to_string()),
             hl: Some("test-hl".to_string()),
-            service: Some("test-svc".to_string()) 
+            service: Some("test-svc".to_string()),
         };
 
         let uri = did.build_uri(Some(params));
@@ -187,8 +198,48 @@ mod tests {
         let did = DID::new();
         let uri = did.build_uri(None);
         assert!(!uri.is_err());
-        
+
         let did_primary = did.identity().unwrap().value();
         assert_eq!(uri.unwrap(), did_primary)
+    }
+
+    #[test]
+    fn test_rebuild_did_from_keysecure() {
+        let did = DID::new();
+        let identity = did.identity().unwrap().value();
+        let account = did.account();
+        let account_priv_key = account.privkey();
+        let account_pem = account_priv_key.to_pem().unwrap();
+
+        let keysecure = account_priv_key
+            .clone()
+            .to_keysecure("password".to_string())
+            .unwrap();
+
+        let try_rebuild_did = DID::from_keysecure("password".to_string(), keysecure);
+        assert!(!try_rebuild_did.is_err());
+
+        let rebuild_did = try_rebuild_did.unwrap();
+        let rebuild_did_account = rebuild_did.account();
+        let rebuild_did_pem = rebuild_did_account.build_pem().unwrap();
+        assert_eq!(account_pem, rebuild_did_pem);
+
+        let rebuild_identity = rebuild_did.identity().unwrap().value();
+        assert_eq!(rebuild_identity, identity)
+    }
+
+    #[test]
+    fn test_rebuild_did_from_keysecure_invalid_password() {
+        let did = DID::new();
+        let account = did.account();
+        let account_priv_key = account.privkey();
+
+        let keysecure = account_priv_key
+            .clone()
+            .to_keysecure("password".to_string())
+            .unwrap();
+
+        let try_rebuild_did = DID::from_keysecure("invalid".to_string(), keysecure);
+        assert!(try_rebuild_did.is_err());
     }
 }

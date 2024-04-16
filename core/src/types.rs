@@ -33,6 +33,9 @@ pub enum DIDError {
     #[error("invalid pem")]
     InvalidPEM,
 
+    #[error("invalid keysecure: {0}")]
+    InvalidKeysecure(String),
+
     #[error("error generate multiaddr: {0}")]
     GenerateMultiAddrError(String),
 

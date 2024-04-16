@@ -1,6 +1,6 @@
 [package]
 name = "prople-did-core"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
 documentation = "https://docs.rs/prople-did-core"
