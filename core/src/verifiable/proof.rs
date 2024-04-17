@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_generate_and_verify_vc_proof() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"));
         vc.add_context(String::from("context2"));
         vc.add_type(String::from("VerifiableCredential"));
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_generate_and_verify_vp_proof() {
-        let vc = VC::new("id1".to_string());
+        let vc = VC::new(String::from("id"), String::from("issuer"));
         let mut vp = VP::new();
 
         vp.add_context("context1".to_string());
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_transform_from_vp() {
-        let vc = VC::new("id1".to_string());
+        let vc = VC::new(String::from("id"), String::from("issuer"));
         let mut vp = VP::new();
 
         vp.add_context("context1".to_string());
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_transform_from_vc() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"));
         vc.add_context(String::from("context2"));
         vc.add_type(String::from("VerifiableCredential"));

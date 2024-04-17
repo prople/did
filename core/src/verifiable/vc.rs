@@ -9,6 +9,7 @@ pub type Context = String;
 pub type ID = String;
 pub type Type = String;
 pub type SRI = String;
+pub type Issuer = String;
 
 /// `VC` is a main object to hold entity credential
 ///
@@ -29,12 +30,14 @@ pub struct VC {
     proof: Option<Proof>,
 
     id: ID,
+    issuer: String,
 }
 
 impl VC {
-    pub fn new(id: ID) -> Self {
+    pub fn new(id: ID, issuer: Issuer) -> Self {
         Self {
             id,
+            issuer,
             contexts: Vec::new(),
             types: Vec::new(),
             credential_subject: Value::Null,
@@ -127,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_generate_credential() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"))
             .add_context("context2".to_string())
             .add_type("VerifiableCredential".to_string());
@@ -149,13 +152,13 @@ mod tests {
         let json_str = vc.to_json();
         assert!(!json_str.is_err());
 
-        let expected_json = r#"{"@context":["context1","context2"],"type":["VerifiableCredential"],"credentialSubject":{"connection":{"user_agent":"test_agent","user_did":"test_did"},"id":"id"},"id":"id"}"#;
+        let expected_json = r#"{"@context":["context1","context2"],"type":["VerifiableCredential"],"credentialSubject":{"connection":{"user_agent":"test_agent","user_did":"test_did"},"id":"id"},"id":"id","issuer":"issuer"}"#;
         assert_eq!(json_str.unwrap(), expected_json.to_string())
     }
 
     #[test]
     fn test_generate_credential_jcs() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"))
             .add_context("context2".to_string())
             .add_type("VerifiableCredential".to_string());
@@ -180,7 +183,7 @@ mod tests {
 
     #[test]
     fn test_generate_empty_context() {
-        let vc = VC::new(String::from("id"));
+        let vc = VC::new(String::from("id"), String::from("issuer"));
         let try_json = vc.to_json();
         assert!(try_json.is_err());
 
@@ -192,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_generate_empty_types() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"));
         vc.add_context(String::from("context2"));
 
@@ -207,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_generate_empty_credential() {
-        let mut vc = VC::new(String::from("id"));
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
         vc.add_context(String::from("context1"))
             .add_context("context2".to_string())
             .add_type("VerifiableCredential".to_string());

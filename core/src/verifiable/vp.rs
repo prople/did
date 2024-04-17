@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_generate_json() {
-        let vc = VC::new("id1".to_string());
+        let vc = VC::new("id1".to_string(), "issuer".to_string());
         let mut vp = VP::new();
 
         vp.add_context("context1".to_string())
@@ -129,13 +129,13 @@ mod tests {
         let try_json = vp.to_json();
         assert!(!try_json.is_err());
 
-        let expected_json = r#"{"@context":["context1","context2"],"type":["type"],"verifiableCredential":[{"@context":[],"type":[],"credentialSubject":null,"id":"id1"}]}"#;
+        let expected_json = r#"{"@context":["context1","context2"],"type":["type"],"verifiableCredential":[{"@context":[],"type":[],"credentialSubject":null,"id":"id1","issuer":"issuer"}]}"#;
         assert_eq!(expected_json, try_json.unwrap())
     }
 
     #[test]
     fn test_generate_jcs() {
-        let vc = VC::new("id1".to_string());
+        let vc = VC::new("id1".to_string(), "issuer".to_string());
         let mut vp = VP::new();
 
         vp.add_context("context1".to_string())
