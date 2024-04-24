@@ -9,7 +9,7 @@ use crate::verifiable::types::{Context, Type};
 /// a [`VC`] object, it may be a single `VC` or multiple
 ///
 /// Ref: <https://www.w3.org/TR/vc-data-model-2.0/#presentations>
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "self::serde")]
 pub struct VP {
     #[serde(rename = "@context")]
