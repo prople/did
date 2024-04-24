@@ -15,6 +15,7 @@ pub const DID_SYNTAX_METHOD: &str = "prople";
 pub const CONTEXT_DEFAULT: &str = "https://www.w3.org/ns/did/v1";
 pub const CONTEXT_ED25519: &str = "https://w3id.org/security/suites/ed25519-2020/v1";
 pub const CONTEXT_X25519: &str = "https://w3id.org/security/suites/x25519-2020/v1";
+pub const CONTEXT_VC_V2: &str = "https://www.w3.org/ns/credentials/v2";
 pub const CONTEXT_VC: &str = "https://www.w3.org/2018/credentials/#VerifiableCredential";
 
 pub const VERIFICATION_TYPE_ED25519: &str = "Ed25519VerificationKey2020";
