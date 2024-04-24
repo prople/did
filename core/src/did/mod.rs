@@ -86,7 +86,7 @@ impl DID {
     pub fn parse_uri(uri: String) -> Result<(String, Params), DIDError> {
         let splitted = uri.as_str().split("?").collect::<Vec<&str>>();
         if splitted.len() < 1 {
-            return Err(DIDError::ParseURIError("invalid given uri".to_string()))
+            return Err(DIDError::ParseURIError("invalid given uri".to_string()));
         }
 
         let did = splitted[0].to_string();
@@ -97,22 +97,22 @@ impl DID {
             for query in queries {
                 let splitted_param = query.split("=").collect::<Vec<&str>>();
                 if splitted_param.len() <= 1 {
-                    continue
+                    continue;
                 }
 
                 if splitted_param[0] == "service" {
-                    params.service = Some(splitted_param[1].to_string()) 
+                    params.service = Some(splitted_param[1].to_string())
                 }
-                
+
                 if splitted_param[0] == "address" {
-                    params.address = Some(splitted_param[1].to_string()) 
+                    params.address = Some(splitted_param[1].to_string())
                 }
-                
+
                 if splitted_param[0] == "hl" {
-                    params.hl = Some(splitted_param[1].to_string()) 
+                    params.hl = Some(splitted_param[1].to_string())
                 }
             }
-        } 
+        }
 
         Ok((did, params))
     }
@@ -125,9 +125,9 @@ impl DID {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use prople_crypto::keysecure::types::ToKeySecure;
-   
+
     use crate::doc::types::ToDoc;
     use crate::keys::IdentityPrivateKeyPairsBuilder;
 
@@ -296,7 +296,7 @@ mod tests {
         let uri = "did:prople:test?service=test-svc".to_string();
         let try_parsed = DID::parse_uri(uri);
         assert!(!try_parsed.is_err());
-        
+
         let parsed = try_parsed.unwrap();
         assert_eq!(parsed.0, "did:prople:test".to_string());
         assert_eq!(parsed.1.service, Some("test-svc".to_string()));

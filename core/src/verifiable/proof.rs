@@ -58,6 +58,10 @@ impl Proof {
         }
     }
 
+    pub fn typ(&mut self, proof_type: String) {
+        self.typ = proof_type;
+    }
+
     pub fn signature(&mut self, value: Value) {
         self.proof_value = value.generate()
     }
@@ -99,10 +103,16 @@ impl Value {
         }
     }
 
-    pub fn transform(
-        keypair: KeyPair,
-        unsecured: Box<dyn ToJCS>,
-    ) -> Result<(Hash, String), DIDError> {
+    pub fn from_jcs(keypair: KeyPair, tojcs: impl ToJCS) -> Result<Self, DIDError> {
+        let jcs = tojcs.to_jcs()?;
+        let this = Self {
+            signature: keypair.signature(jcs.as_bytes()),
+        };
+
+        Ok(this)
+    }
+
+    pub fn transform(keypair: KeyPair, unsecured: impl ToJCS) -> Result<(Hash, String), DIDError> {
         let tojcs = unsecured.to_jcs().map_err(|err| match err {
             DIDError::GenerateVCError(msg) => DIDError::GenerateJSONJCSError(msg.to_string()),
             _ => {
@@ -216,6 +226,33 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_value_from_vc() {
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
+        vc.add_context(String::from("context1"));
+        vc.add_context(String::from("context2"));
+        vc.add_type(String::from("VerifiableCredential"));
+
+        let credential_props = FakeCredentialProperties {
+            user_agent: String::from("test_agent"),
+            user_did: String::from("test_did"),
+        };
+
+        let credential = FakeCredentialSubject {
+            id: String::from("id"),
+            connection: credential_props,
+        };
+
+        let credential_value = serde_json::to_value(credential);
+        assert!(!credential_value.is_err());
+
+        vc.set_credential(credential_value.unwrap());
+
+        let keypair = KeyPair::generate();
+        let value = Value::from_jcs(keypair, vc);
+        assert!(!value.is_err());
+    }
+
+    #[test]
     fn test_generate_and_verify_vp_proof() {
         let vc = VC::new(String::from("id"), String::from("issuer"));
         let mut vp = VP::new();
@@ -251,7 +288,7 @@ mod tests {
         vp.add_credential(vc);
 
         let keypair = KeyPair::generate();
-        let try_transformed = Value::transform(keypair.clone(), Box::new(vp));
+        let try_transformed = Value::transform(keypair.clone(), vp);
         assert!(!try_transformed.is_err());
 
         let transformed = try_transformed.unwrap();
@@ -286,7 +323,7 @@ mod tests {
         vc.set_credential(credential_value.unwrap());
 
         let keypair = KeyPair::generate();
-        let try_transformed = Value::transform(keypair.clone(), Box::new(vc));
+        let try_transformed = Value::transform(keypair.clone(), vc);
         assert!(!try_transformed.is_err());
 
         let transformed = try_transformed.unwrap();
