@@ -16,31 +16,31 @@ use crate::types::ToJCS;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct Proof {
-    id: String,
+    pub id: String,
 
     #[serde(rename = "type")]
-    typ: String,
+    pub typ: String,
 
     #[serde(rename = "proofPurpose")]
-    proof_purpose: String,
+    pub proof_purpose: String,
 
     #[serde(rename = "proofValue")]
-    proof_value: String,
+    pub proof_value: String,
 
     #[serde(rename = "verificationMethod")]
-    verification_method: String,
+    pub verification_method: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    created: Option<String>,
+    pub created: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    expires: Option<String>,
+    pub expires: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    nonce: Option<String>,
+    pub nonce: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    cryptosuite: Option<String>,
+    pub cryptosuite: Option<String>,
 }
 
 impl Proof {

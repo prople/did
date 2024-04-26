@@ -18,19 +18,19 @@ pub type Issuer = String;
 #[serde(crate = "self::serde")]
 pub struct VC {
     #[serde(rename = "@context")]
-    contexts: Vec<Context>,
+    pub contexts: Vec<Context>,
 
     #[serde(rename = "type")]
-    types: Vec<Type>,
+    pub types: Vec<Type>,
 
     #[serde(rename = "credentialSubject")]
-    credential_subject: Value,
+    pub credential_subject: Value,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    proof: Option<Proof>,
+    pub proof: Option<Proof>,
 
-    id: ID,
-    issuer: String,
+    pub id: ID,
+    pub issuer: String,
 }
 
 impl VC {

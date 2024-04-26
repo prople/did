@@ -13,19 +13,19 @@ use crate::verifiable::types::{Context, Type};
 #[serde(crate = "self::serde")]
 pub struct VP {
     #[serde(rename = "@context")]
-    contexts: Vec<Context>,
+    pub contexts: Vec<Context>,
 
     #[serde(rename = "type")]
-    types: Vec<Type>,
+    pub types: Vec<Type>,
 
     #[serde(rename = "verifiableCredential")]
-    verifiable_credential: Vec<VC>,
+    pub verifiable_credential: Vec<VC>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    proof: Option<Vec<Proof>>,
+    pub proof: Option<Vec<Proof>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    holder: Option<String>,
+    pub holder: Option<String>,
 }
 
 impl VP {
