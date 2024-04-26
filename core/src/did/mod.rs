@@ -23,7 +23,7 @@ use query::Params;
 /// ````
 ///
 /// The **encoded_data** will be a generated public key in bytes
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DID {
     account: Account,
 }
