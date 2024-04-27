@@ -13,7 +13,7 @@ use crate::types::ToJCS;
 /// - <https://www.w3.org/TR/vc-data-model-2.0/#credentials>
 /// - <https://www.w3.org/TR/vc-data-model-2.0/#proofs-signatures>
 /// - <https://www.w3.org/TR/vc-data-model-2.0/#algorithms>
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(crate = "self::serde")]
 pub struct Proof {
     pub id: String,

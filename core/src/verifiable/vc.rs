@@ -14,7 +14,7 @@ pub type Issuer = String;
 /// `VC` is a main object to hold entity credential
 ///
 /// Ref: <https://www.w3.org/TR/vc-data-model-2.0/>
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(crate = "self::serde")]
 pub struct VC {
     #[serde(rename = "@context")]
