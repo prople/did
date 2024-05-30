@@ -176,11 +176,7 @@ mod tests {
         let did = DID::new();
         let mut identity = did.identity().unwrap();
 
-        let try_build_auth = identity.build_auth_method();
-        assert!(!try_build_auth.is_err());
-
-        let try_build_assertion = identity.build_assertion_method();
-        assert!(!try_build_assertion.is_err());
+        identity.build_auth_method().build_assertion_method();
 
         let doc = identity.to_doc();
         let jsondoc = doc.to_json();
@@ -196,11 +192,7 @@ mod tests {
 
         let mut identity = did.identity().unwrap();
 
-        let try_build_auth = identity.build_auth_method();
-        assert!(!try_build_auth.is_err());
-
-        let try_build_assertion = identity.build_assertion_method();
-        assert!(!try_build_assertion.is_err());
+        identity.build_auth_method().build_assertion_method();
 
         let try_private_key_pairs = identity.build_private_keys("test".to_string());
         assert!(!try_private_key_pairs.is_err());

@@ -55,18 +55,22 @@ impl Identity {
             .ok_or(DIDError::InvalidDID)
     }
 
-    pub fn build_auth_method(&mut self) -> Result<(), DIDError> {
-        let verification_method = self.build_verification_method();
+    pub fn build_auth_method(&mut self) -> &mut Self {
+        if self.authentication.is_none() {
+            let verification_method = self.build_verification_method();
+            self.authentication = Some(verification_method);
+        }
 
-        self.authentication = Some(verification_method);
-        Ok(())
+        self
     }
 
-    pub fn build_assertion_method(&mut self) -> Result<(), DIDError> {
-        let verification_method = self.build_verification_method();
+    pub fn build_assertion_method(&mut self) -> &mut Self {
+        if self.assertion.is_none() {
+            let verification_method = self.build_verification_method();
+            self.assertion = Some(verification_method);
+        }
 
-        self.assertion = Some(verification_method);
-        Ok(())
+        self
     }
 
     fn build_verification_method(&self) -> VerificationMethod {
