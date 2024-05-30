@@ -26,7 +26,7 @@ pub trait IdentityPrivateKeyPairsBuilder {
 }
 
 /// `PrivateKeyPairs` used to generate the `verification` and `aggrement`
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct PrivateKeyPairs {
     pub verification: KeySecure,
@@ -36,7 +36,7 @@ pub struct PrivateKeyPairs {
 /// `IdentityPrivateKeyPairs` used to specific identity object, it is different with the `Identity` object
 ///
 /// This object used to as an object that will be saved to [`KeySecure`] format
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
 pub struct IdentityPrivateKeyPairs {
     pub identity: String,
