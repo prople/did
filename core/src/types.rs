@@ -87,6 +87,9 @@ pub enum DIDError {
 
     #[error("unable to save key secure")]
     SaveSecureKeysError,
+
+    #[error("proof: signature invalid")]
+    ProofInvalid,
 }
 
 /// `ToJSON` is a simple trait used to any objects that want to conver it's properties

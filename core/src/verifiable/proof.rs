@@ -66,6 +66,10 @@ impl Proof {
         self.proof_value = value.generate()
     }
 
+    pub fn set_signature_as_string(&mut self, sig: String) {
+        self.proof_value = sig
+    }
+
     pub fn purpose(&mut self, purpose: String) {
         self.proof_purpose = purpose
     }
@@ -125,6 +129,22 @@ impl Value {
         Ok((toblake, value.generate()))
     }
 
+    pub fn transform_verifier(
+        keypair: KeyPair,
+        unsecured: impl ToJCS,
+        sig: String,
+    ) -> Result<bool, DIDError> {
+        let (hashed, sig_generated) = Value::transform(keypair.clone(), unsecured)?;
+        if sig_generated != sig {
+            return Ok(false);
+        }
+
+        let public_key = keypair.pub_key();
+        public_key
+            .verify(hashed.as_bytes(), sig)
+            .map_err(|_| DIDError::ProofInvalid)
+    }
+
     pub fn generate(&self) -> String {
         self.signature.to_hex()
     }
@@ -136,6 +156,7 @@ mod tests {
 
     use prople_crypto::eddsa::types::errors::EddsaError;
     use rst_common::standard::serde_json;
+    use rst_common::standard::uuid;
     use rst_common::with_cryptography::hex;
 
     use crate::types::ToJCS;
@@ -223,6 +244,87 @@ mod tests {
         let try_verify_value = pubkey.verify(vc_jcs.clone().as_bytes(), proof_value.clone());
         assert!(!try_verify_value.is_err());
         assert!(try_verify_value.unwrap());
+    }
+
+    #[test]
+    fn test_generate_and_verify_vc_with_split_proof() {
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
+        vc.add_context(String::from("context1"));
+        vc.add_context(String::from("context2"));
+        vc.add_type(String::from("VerifiableCredential"));
+
+        let credential_props = FakeCredentialProperties {
+            user_agent: String::from("test_agent"),
+            user_did: String::from("test_did"),
+        };
+
+        let credential = FakeCredentialSubject {
+            id: String::from("id"),
+            connection: credential_props,
+        };
+
+        let credential_value = serde_json::to_value(credential);
+        assert!(!credential_value.is_err());
+
+        vc.set_credential(credential_value.unwrap());
+        let json_str = vc.to_jcs();
+        assert!(!json_str.is_err());
+
+        let mut proof = Proof::new(uuid::Uuid::new_v4().to_string());
+
+        let keypair = KeyPair::generate();
+        let value = Value::transform(keypair.clone(), vc.clone());
+        assert!(!value.is_err());
+
+        let (_, sig) = value.unwrap();
+        proof.set_signature_as_string(sig.clone());
+        vc.proof(proof);
+
+        let (vc_splitted, proof_splitted) = vc.split_proof();
+        assert!(!proof_splitted.is_none());
+
+        let verified = Value::transform_verifier(keypair, vc_splitted, sig);
+        assert!(!verified.is_err());
+        assert!(verified.unwrap());
+    }
+
+    #[test]
+    fn test_generate_and_verify_vc_with_split_proof_invalid() {
+        let mut vc = VC::new(String::from("id"), String::from("issuer"));
+        vc.add_context(String::from("context1"));
+        vc.add_context(String::from("context2"));
+        vc.add_type(String::from("VerifiableCredential"));
+
+        let credential_props = FakeCredentialProperties {
+            user_agent: String::from("test_agent"),
+            user_did: String::from("test_did"),
+        };
+
+        let credential = FakeCredentialSubject {
+            id: String::from("id"),
+            connection: credential_props,
+        };
+
+        let credential_value = serde_json::to_value(credential);
+        assert!(!credential_value.is_err());
+
+        vc.set_credential(credential_value.unwrap());
+        let json_str = vc.to_jcs();
+        assert!(!json_str.is_err());
+
+        let mut proof = Proof::new(uuid::Uuid::new_v4().to_string());
+        
+        let keypair = KeyPair::generate();
+        let value = Value::transform(keypair.clone(), vc.clone());
+        assert!(!value.is_err());
+        
+        let (_, sig) = value.unwrap();
+        proof.set_signature_as_string(sig.clone());
+        vc.proof(proof);
+        
+        let verified = Value::transform_verifier(keypair, vc, sig);
+        assert!(!verified.is_err());
+        assert!(!verified.unwrap())
     }
 
     #[test]

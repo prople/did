@@ -65,6 +65,19 @@ impl VC {
         self
     }
 
+    pub fn split_proof(&self) -> (Self, Option<Proof>) {
+        let vc = Self {
+            contexts: self.contexts.to_owned(),
+            types: self.types.to_owned(),
+            credential_subject: self.credential_subject.to_owned(),
+            proof: None,
+            id: self.id.to_owned(),
+            issuer: self.issuer.to_owned(),
+        };
+
+        (vc, self.proof.to_owned())
+    }
+
     fn validate(&self) -> Result<(), DIDError> {
         if self.contexts.is_empty() {
             return Err(DIDError::GenerateVCError(String::from(
