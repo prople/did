@@ -22,7 +22,7 @@ pub struct VP {
     pub verifiable_credential: Vec<VC>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub proof: Option<Vec<Proof>>,
+    pub proof: Option<Proof>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub holder: Option<String>,
@@ -55,20 +55,25 @@ impl VP {
     }
 
     pub fn add_proof(&mut self, proof: Proof) -> &mut Self {
-        match &mut self.proof {
-            Some(proofs) => {
-                proofs.push(proof);
-                self.proof = Some(proofs.to_vec())
-            }
-            None => self.proof = Some(vec![proof]),
-        }
-
+        self.proof = Some(proof);
         self
     }
 
     pub fn set_holder(&mut self, holder: String) -> &mut Self {
         self.holder = Some(holder);
         self
+    }
+    
+    pub fn split_proof(&self) -> (Self, Option<Proof>) {
+        let vc = Self {
+            contexts: self.contexts.to_owned(),
+            holder: self.holder.to_owned(),
+            types: self.types.to_owned(),
+            verifiable_credential: self.verifiable_credential.to_owned(),
+            proof: None,
+        };
+
+        (vc, self.proof.to_owned())
     }
 
     fn validate(&self) -> Result<(), DIDError> {
