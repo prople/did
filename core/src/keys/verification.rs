@@ -1,6 +1,6 @@
 use multibase::{self, Base::Base58Btc};
 
-use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::{keypair::KeyPair, pubkey::PubKey};
 use prople_crypto::eddsa::privkey::PrivKey;
 use prople_crypto::keysecure::types::ToKeySecure;
 use prople_crypto::keysecure::KeySecure;
@@ -11,6 +11,7 @@ use crate::keys::{KeySecureBuilder, KeySecureError};
 #[derive(Debug, PartialEq)]
 pub enum Error {
     GeneratePrivKeyError,
+    DecodePublicKeyError,
     GenerateSecureKeyError,
 }
 
@@ -30,6 +31,14 @@ impl Pairs {
         };
 
         !self.pub_key.is_empty() || !pem.is_empty()
+    }
+
+    pub fn decode_pub_key(&self) -> Result<PubKey, Error> {
+        let (_, pubkey_bytes) = multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
+        let pubkey_string = String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
+        let pubkey = PubKey::from_hex(pubkey_string).map_err(|_| Error::DecodePublicKeyError)?;
+
+        Ok(pubkey)
     }
 }
 
@@ -76,5 +85,24 @@ mod tests {
         let verification = Key::new();
         let keypairs = verification.generate();
         assert!(keypairs.is_valid())
+    }
+
+    #[test]
+    fn test_decode_public_key() {
+        let verification = Key::new();
+        let pairs = verification.generate();
+
+        let privkey_pem = pairs.priv_key.to_pem();
+        assert!(!privkey_pem.is_err());
+
+        let keypair_generated = KeyPair::from_pem(privkey_pem.unwrap());
+        assert!(!keypair_generated.is_err());
+
+        let pubkey_decoded = pairs.decode_pub_key();
+        assert!(!pubkey_decoded.is_err());
+
+        let keypair = keypair_generated.unwrap();
+        let pubkey_regenerated = keypair.pub_key().to_hex();
+        assert_eq!(pubkey_regenerated, pubkey_decoded.unwrap().to_hex())
     }
 }

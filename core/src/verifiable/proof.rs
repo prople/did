@@ -1,4 +1,5 @@
 use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
 
 use rst_common::standard::serde::{self, Deserialize, Serialize};
@@ -140,6 +141,24 @@ impl Value {
         }
 
         let public_key = keypair.pub_key();
+        public_key
+            .verify(hashed.as_bytes(), sig)
+            .map_err(|_| DIDError::ProofInvalid)
+    }
+
+    pub fn verify_proof(
+        public_key: PubKey,
+        unsecured: impl ToJCS,
+        sig: String,
+    ) -> Result<bool, DIDError> {
+        let tojcs = unsecured.to_jcs().map_err(|err| match err {
+            DIDError::GenerateVCError(msg) => DIDError::GenerateJSONJCSError(msg.to_string()),
+            _ => {
+                DIDError::GenerateJSONJCSError("unable to generate canonicalized json".to_string())
+            }
+        })?;
+
+        let hashed = blake3::hash(tojcs.as_bytes());
         public_key
             .verify(hashed.as_bytes(), sig)
             .map_err(|_| DIDError::ProofInvalid)
@@ -313,15 +332,15 @@ mod tests {
         assert!(!json_str.is_err());
 
         let mut proof = Proof::new(uuid::Uuid::new_v4().to_string());
-        
+
         let keypair = KeyPair::generate();
         let value = Value::transform(keypair.clone(), vc.clone());
         assert!(!value.is_err());
-        
+
         let (_, sig) = value.unwrap();
         proof.set_signature_as_string(sig.clone());
         vc.proof(proof);
-        
+
         let verified = Value::transform_verifier(keypair, vc, sig);
         assert!(!verified.is_err());
         assert!(!verified.unwrap())
@@ -377,6 +396,34 @@ mod tests {
         let try_verify_value = pubkey.verify(vp_jcs.clone().as_bytes(), proof_value.clone());
         assert!(!try_verify_value.is_err());
         assert!(try_verify_value.unwrap());
+    }
+
+    #[test]
+    fn test_generate_and_verify_vp_proof_with_internal_method() {
+        let vc = VC::new(String::from("id"), String::from("issuer"));
+        let mut vp = VP::new();
+
+        vp.add_context("context1".to_string());
+        vp.add_context("context2".to_string());
+        vp.add_type("type".to_string());
+        vp.add_credential(vc);
+
+        let keypair = KeyPair::generate();
+        let mut proof = Proof::new(uuid::Uuid::new_v4().to_string());
+
+        let value = Value::transform(keypair.clone(), vp.clone());
+        assert!(!value.is_err());
+
+        let (_, sig) = value.unwrap();
+        proof.set_signature_as_string(sig.clone());
+        vp.add_proof(proof.clone());
+
+        let (vp_orig, proof_orig) = vp.split_proof();
+        assert!(proof_orig.is_some());
+
+        let verified = Value::verify_proof(keypair.pub_key(), vp_orig, proof.proof_value);
+        assert!(!verified.is_err());
+        assert!(verified.unwrap());
     }
 
     #[test]
