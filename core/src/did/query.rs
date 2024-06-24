@@ -6,7 +6,6 @@ use crate::types::DIDError;
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "self::serde")]
 pub struct Params {
-    pub service: Option<String>,
     pub address: Option<String>,
     pub hl: Option<String>,
 }
@@ -27,9 +26,6 @@ impl Params {
 
     pub fn build_query(&self) -> Option<String> {
         let mut query_str = Vec::new();
-        if let Some(svc) = &self.service {
-            query_str.push(format!("service={}", svc))
-        }
 
         if let Some(addr) = &self.address {
             query_str.push(format!("address={}", addr))
@@ -50,7 +46,6 @@ impl Params {
 impl Default for Params {
     fn default() -> Self {
         Params {
-            service: None,
             address: None,
             hl: None,
         }
@@ -69,13 +64,12 @@ mod tests {
         let params = Params {
             address: Some("test-addr".to_string()),
             hl: Some("test-hl".to_string()),
-            service: Some("test-svc".to_string()),
         };
 
         let query_str = params.build_query();
         assert!(query_str.is_some());
         assert_eq!(
-            "service=test-svc&address=test-addr&hl=test-hl".to_string(),
+            "address=test-addr&hl=test-hl".to_string(),
             query_str.unwrap()
         )
     }

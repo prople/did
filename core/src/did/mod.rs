@@ -100,10 +100,6 @@ impl DID {
                     continue;
                 }
 
-                if splitted_param[0] == "service" {
-                    params.service = Some(splitted_param[1].to_string())
-                }
-
                 if splitted_param[0] == "address" {
                     params.address = Some(splitted_param[1].to_string())
                 }
@@ -208,14 +204,13 @@ mod tests {
         let params = Params {
             address: Some("test-addr".to_string()),
             hl: Some("test-hl".to_string()),
-            service: Some("test-svc".to_string()),
         };
 
         let uri = did.build_uri(Some(params));
         assert!(!uri.is_err());
 
         let did_primary = did.identity().unwrap().value();
-        let did_query_params = "service=test-svc&address=test-addr&hl=test-hl".to_string();
+        let did_query_params = "address=test-addr&hl=test-hl".to_string();
         let did_uri = format!("{}?{}", did_primary, did_query_params);
         assert_eq!(did_uri, uri.unwrap())
     }
@@ -272,26 +267,24 @@ mod tests {
 
     #[test]
     fn test_parse_uri_with_full_queries() {
-        let uri = "did:prople:test?service=test-svc&address=test-addr&hl=test-hl".to_string();
+        let uri = "did:prople:test?address=test-addr&hl=test-hl".to_string();
         let try_parsed = DID::parse_uri(uri);
         assert!(!try_parsed.is_err());
 
         let parsed = try_parsed.unwrap();
         assert_eq!(parsed.0, "did:prople:test".to_string());
         assert_eq!(parsed.1.address, Some("test-addr".to_string()));
-        assert_eq!(parsed.1.service, Some("test-svc".to_string()));
         assert_eq!(parsed.1.hl, Some("test-hl".to_string()));
     }
 
     #[test]
     fn test_parse_uri_with_single_query() {
-        let uri = "did:prople:test?service=test-svc".to_string();
+        let uri = "did:prople:test?address=test-svc".to_string();
         let try_parsed = DID::parse_uri(uri);
         assert!(!try_parsed.is_err());
 
         let parsed = try_parsed.unwrap();
         assert_eq!(parsed.0, "did:prople:test".to_string());
-        assert_eq!(parsed.1.service, Some("test-svc".to_string()));
     }
 
     #[test]
@@ -302,7 +295,6 @@ mod tests {
 
         let parsed = try_parsed.unwrap();
         assert_eq!(parsed.0, "did:prople:test".to_string());
-        assert_eq!(parsed.1.service, None);
         assert_eq!(parsed.1.address, None);
         assert_eq!(parsed.1.hl, None);
     }
