@@ -144,5 +144,5 @@ Example of *unsecured (without proof)* `VP` :
 
 ```toml
 [dependencies]
-prople-did-core = {version = "0.5.1"}
+prople-did-core = {version = "0.5.2"}
 ```
