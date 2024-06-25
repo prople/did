@@ -11,7 +11,7 @@ use crate::types::*;
 /// A `verification_pairs` is a public and private keys used to verify a context based on some signature
 /// An `aggreement_pairs` is a public and private keys used to generate the shared secret through `ECDH` algorithm
 #[derive(Debug, Clone)]
-struct VerificationMethod {
+pub struct VerificationMethod {
     pub verification_pairs: VerificationPairs,
     pub agreement_pairs: AgreementPairs,
 }
@@ -53,6 +53,14 @@ impl Identity {
             .last()
             .map(|val| val.to_string())
             .ok_or(DIDError::InvalidDID)
+    }
+
+    pub fn get_authentication_method(&self) -> Option<VerificationMethod> {
+        self.authentication.to_owned()
+    }
+
+    pub fn get_assertion_method(&self) -> Option<VerificationMethod> {
+        self.assertion.to_owned()
     }
 
     pub fn build_auth_method(&mut self) -> &mut Self {

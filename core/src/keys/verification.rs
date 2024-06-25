@@ -1,7 +1,7 @@
 use multibase::{self, Base::Base58Btc};
 
-use prople_crypto::eddsa::{keypair::KeyPair, pubkey::PubKey};
 use prople_crypto::eddsa::privkey::PrivKey;
+use prople_crypto::eddsa::{keypair::KeyPair, pubkey::PubKey};
 use prople_crypto::keysecure::types::ToKeySecure;
 use prople_crypto::keysecure::KeySecure;
 
@@ -34,8 +34,10 @@ impl Pairs {
     }
 
     pub fn decode_pub_key(&self) -> Result<PubKey, Error> {
-        let (_, pubkey_bytes) = multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
-        let pubkey_string = String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
+        let (_, pubkey_bytes) =
+            multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
+        let pubkey_string =
+            String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
         let pubkey = PubKey::from_hex(pubkey_string).map_err(|_| Error::DecodePublicKeyError)?;
 
         Ok(pubkey)

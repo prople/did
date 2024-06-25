@@ -67,6 +67,9 @@ pub enum DIDError {
     #[error("error decode json value: {0}")]
     DecodeJSONError(String),
 
+    #[error("error decode public key: {0}")]
+    DecodePubKeyError(String),
+
     #[error("error hashlink: {0}")]
     HashLinkError(String),
 

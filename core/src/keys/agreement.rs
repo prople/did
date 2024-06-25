@@ -29,9 +29,12 @@ impl Pairs {
     }
 
     pub fn decode_public_key(&self) -> Result<PublicKey, Error> {
-        let (_, pubkey_bytes) = multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
-        let pubkey_string = String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
-        let pubkey = PublicKey::from_hex(&pubkey_string).map_err(|_| Error::DecodePublicKeyError)?;
+        let (_, pubkey_bytes) =
+            multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
+        let pubkey_string =
+            String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
+        let pubkey =
+            PublicKey::from_hex(&pubkey_string).map_err(|_| Error::DecodePublicKeyError)?;
 
         Ok(pubkey)
     }
