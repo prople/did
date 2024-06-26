@@ -24,7 +24,7 @@ mod doc;
 pub mod types {
     use super::*;
 
-    pub use doc::{Doc, Primary};
+    pub use doc::{Doc, Primary, PublicKeyDecoded};
 
     pub trait ToDoc {
         fn to_doc(&self) -> Doc;
