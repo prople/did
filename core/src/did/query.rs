@@ -3,7 +3,7 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 
 use crate::types::DIDError;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(crate = "self::serde")]
 pub struct Params {
     pub address: Option<String>,
