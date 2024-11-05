@@ -4,7 +4,7 @@ use rst_common::with_errors::thiserror::{self, Error as ThisError};
 
 use prople_crypto::keysecure::KeySecure;
 
-use crate::types::{DIDError, ToJSON};
+use crate::types::{DIDError, JSONValue, ToJSON};
 
 /// `Error` defined for specific this module error types
 #[derive(Debug, ThisError)]
@@ -90,7 +90,9 @@ impl IdentityPrivateKeyPairs {
 }
 
 impl ToJSON for IdentityPrivateKeyPairs {
-    fn to_json(&self) -> Result<String, crate::types::DIDError> {
-        serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
+    fn to_json(&self) -> Result<JSONValue, DIDError> {
+        let jsonstr = serde_json::to_string(self)
+            .map_err(|err| DIDError::GenerateJSONError(err.to_string()))?;
+        Ok(JSONValue::from(jsonstr))
     }
 }

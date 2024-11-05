@@ -11,7 +11,7 @@ use crate::types::{DIDError, ToJSON, BLAKE3_HASH_CODE};
 /// format
 pub fn generate_from_json(data: impl ToJSON) -> Result<String, DIDError> {
     let jsondata = data.to_json()?;
-    let hashed_json = blake3::hash(jsondata.as_bytes());
+    let hashed_json = blake3::hash(jsondata.to_string().as_bytes());
     let output_hash = Multihash::<32>::wrap(BLAKE3_HASH_CODE, hashed_json.as_bytes())
         .map_err(|err| DIDError::GenerateHashLinkError(err.to_string()))?;
 
@@ -27,7 +27,7 @@ pub fn generate_from_json(data: impl ToJSON) -> Result<String, DIDError> {
 /// from given data in json
 pub fn verify_from_json(data: impl ToJSON, encoded: String) -> Result<(), DIDError> {
     let jsondata = data.to_json()?;
-    let hashed_json = blake3::hash(jsondata.as_bytes());
+    let hashed_json = blake3::hash(jsondata.to_string().as_bytes());
 
     let (decoded_base, decoded_bytes) = multibase::decode(encoded.clone())
         .map_err(|err| DIDError::HashLinkError(err.to_string()))?;
@@ -54,15 +54,19 @@ mod tests {
     use rst_common::standard::serde::{self, Deserialize, Serialize};
     use rst_common::standard::serde_json;
 
-    #[derive(Deserialize, Serialize, Clone)]
+    use crate::types::JSONValue;
+
+    #[derive(Deserialize, Serialize, Clone, Debug)]
     #[serde(crate = "self::serde")]
     struct FakeMessage {
         message: String,
     }
 
     impl ToJSON for FakeMessage {
-        fn to_json(&self) -> Result<String, DIDError> {
-            serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
+        fn to_json(&self) -> Result<JSONValue, DIDError> {
+            let jsonstr = serde_json::to_string(self)
+                .map_err(|err| DIDError::GenerateJSONError(err.to_string()))?;
+            Ok(JSONValue::from(jsonstr))
         }
     }
 

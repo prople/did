@@ -1,13 +1,13 @@
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
-use crate::types::{DIDError, ToJSON, CONTEXT_VC};
+use crate::types::{DIDError, JSONValue, ToJSON, CONTEXT_VC};
 
 pub const CONTEXT_USER_AGENT_ADDRESS: &str = "https://schema.org/identifier";
 
 /// `UserConnectionCredentialProperties` is a properties designed to  fullfil the connection
 /// request contexts when user want to connect with others
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(crate = "self::serde")]
 pub struct UserConnectionCredentialProperties {
@@ -25,7 +25,7 @@ impl Default for UserConnectionCredentialProperties {
 }
 
 /// `UserConnectionCredentialContext` is a custom context used specifically for the `Prople` needs
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(crate = "self::serde")]
 pub struct UserConnectionCredentialContext {
     #[serde(rename = "@context")]
@@ -41,7 +41,7 @@ impl UserConnectionCredentialContext {
 }
 
 /// `UserConnectionCredential` is an object used to generate main credential when connecting with others
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "PascalCase")]
 #[serde(crate = "self::serde")]
 pub struct UserConnectionCredential {
@@ -57,8 +57,10 @@ impl UserConnectionCredential {
 }
 
 impl ToJSON for UserConnectionCredential {
-    fn to_json(&self) -> Result<String, DIDError> {
-        serde_json::to_string(self).map_err(|err| DIDError::GenerateJSONError(err.to_string()))
+    fn to_json(&self) -> Result<JSONValue, DIDError> {
+        let jsonstr = serde_json::to_string(self)
+            .map_err(|err| DIDError::GenerateJSONError(err.to_string()))?;
+        Ok(JSONValue::from(jsonstr))
     }
 }
 
@@ -73,6 +75,6 @@ mod tests {
         assert!(!to_json.is_err());
 
         let expected_json = r#"{"UserConnectionCredential":{"@context":{"userAgentAddress":"https://schema.org/identifier","userDid":"https://www.w3.org/2018/credentials/#VerifiableCredential"}}}"#;
-        assert_eq!(to_json.unwrap(), expected_json.to_string())
+        assert_eq!(to_json.unwrap(), JSONValue::from(expected_json))
     }
 }

@@ -1,6 +1,11 @@
 //! `types` contains all of public base types used on this crate
 
-use rst_common::with_errors::thiserror::{self, Error};
+use std::fmt::Debug;
+
+use rst_common::{
+    standard::serde::Serialize,
+    with_errors::thiserror::{self, Error},
+};
 
 pub type DIDSyntax = String;
 pub type DIDController = String;
@@ -20,6 +25,8 @@ pub const CONTEXT_VC: &str = "https://www.w3.org/2018/credentials/#VerifiableCre
 
 pub const VERIFICATION_TYPE_ED25519: &str = "Ed25519VerificationKey2020";
 pub const VERIFICATION_TYPE_X25519: &str = "X25519KeyAgreementKey2020";
+
+pub const JSON_MIME_TYPE: &str = "application/json";
 
 /// `BLAKE3_HASH_CODE` is our default used hash function
 /// The code itself taken from here: https://github.com/multiformats/multicodec/blob/master/table.csv#L21
@@ -67,6 +74,9 @@ pub enum DIDError {
     #[error("error decode json value: {0}")]
     DecodeJSONError(String),
 
+    #[error("unable to get JSON from bytes: {0}")]
+    InvalidJSONBytes(String),
+
     #[error("error decode public key: {0}")]
     DecodePubKeyError(String),
 
@@ -95,17 +105,60 @@ pub enum DIDError {
     ProofInvalid,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JSONValue(String);
+
+impl JSONValue {
+    pub fn mime_type(&self) -> &str {
+        JSON_MIME_TYPE
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let out = self.0.as_bytes();
+        out.to_vec()
+    }
+}
+
+impl From<String> for JSONValue {
+    fn from(value: String) -> Self {
+        JSONValue(value)
+    }
+}
+
+impl From<&str> for JSONValue {
+    fn from(value: &str) -> Self {
+        JSONValue(value.to_string())
+    }
+}
+
+impl ToString for JSONValue {
+    fn to_string(&self) -> String {
+        self.0.to_owned()
+    }
+}
+
+impl TryFrom<Vec<u8>> for JSONValue {
+    type Error = DIDError;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        let out =
+            String::from_utf8(value).map_err(|err| DIDError::InvalidJSONBytes(err.to_string()))?;
+
+        Ok(JSONValue(out))
+    }
+}
+
 /// `ToJSON` is a simple trait used to any objects that want to conver it's properties
 /// to JSON encoding format
-pub trait ToJSON {
-    fn to_json(&self) -> Result<String, DIDError>;
+pub trait ToJSON: Serialize + Clone + Debug {
+    fn to_json(&self) -> Result<JSONValue, DIDError>;
 }
 
 /// `ToJCS` is a trait used that indicate an object that should be
 /// able to convert to `JCS (JSON Canonicalization Scheme)`
 ///
 /// Ref: <https://www.rfc-editor.org/rfc/rfc8785>
-pub trait ToJCS {
+pub trait ToJCS: Serialize + Clone + Debug {
     fn to_jcs(&self) -> Result<String, DIDError>;
 }
 

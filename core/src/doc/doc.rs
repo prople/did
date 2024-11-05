@@ -11,7 +11,7 @@ use crate::types::*;
 #[derive(Debug)]
 pub enum PublicKeyDecoded {
     EdDSA(EdDSAPubKey),
-    ECDH(ECDHPubKey)
+    ECDH(ECDHPubKey),
 }
 
 /// `Primary` is a main data structure used for `authentication`, `assertion`
@@ -35,12 +35,14 @@ impl Primary {
             VERIFICATION_TYPE_ED25519 => {
                 let public_key = self.decode_pub_key_verificaiton()?;
                 Ok(PublicKeyDecoded::EdDSA(public_key))
-            },
+            }
             VERIFICATION_TYPE_X25519 => {
                 let public_key = self.decode_pub_key_agreement()?;
                 Ok(PublicKeyDecoded::ECDH(public_key))
-            },
-            _ => Err(DIDError::DecodePubKeyError("unknown verification type".to_string()))
+            }
+            _ => Err(DIDError::DecodePubKeyError(
+                "unknown verification type".to_string(),
+            )),
         }
     }
 
@@ -174,8 +176,10 @@ impl Doc {
 }
 
 impl ToJSON for Doc {
-    fn to_json(&self) -> Result<String, DIDError> {
-        serde_json::to_string(self).map_err(|err| DIDError::GenerateDocError(err.to_string()))
+    fn to_json(&self) -> Result<JSONValue, DIDError> {
+        let jsonstr = serde_json::to_string(self)
+            .map_err(|err| DIDError::GenerateDocError(err.to_string()))?;
+        Ok(JSONValue::from(jsonstr))
     }
 }
 
@@ -201,7 +205,7 @@ mod tests {
 
     use prople_crypto::eddsa::keypair::KeyPair;
 
-    use crate::keys::{VerificationKey, AgreementKey};
+    use crate::keys::{AgreementKey, VerificationKey};
 
     #[test]
     fn test_add_assertion() {
@@ -220,7 +224,8 @@ mod tests {
 
         assert!(!json.is_err());
 
-        let fromjson: Result<Doc, _> = serde_json::from_str(json.as_ref().unwrap().as_str());
+        let fromjson: Result<Doc, _> =
+            serde_json::from_str(json.as_ref().unwrap().to_string().as_str());
         assert!(!fromjson.as_ref().is_err());
 
         let doc = fromjson.unwrap();
@@ -250,28 +255,28 @@ mod tests {
     fn test_decode_public_key_eddsa() {
         let key = VerificationKey::new();
         let pairs = key.generate();
-        
+
         let primary = Primary {
             id: "id".to_string(),
             controller: "controller".to_string(),
             verification_type: VERIFICATION_TYPE_ED25519.to_string(),
             multibase: pairs.clone().pub_key,
-        };        
+        };
 
         let decoded = primary.decode_pub_key();
         assert!(!decoded.is_err());
 
-        let decoded_pub_key = decoded.unwrap(); 
+        let decoded_pub_key = decoded.unwrap();
         assert!(matches!(decoded_pub_key, PublicKeyDecoded::EdDSA(_)));
 
         match decoded_pub_key {
             PublicKeyDecoded::EdDSA(pubkey) => {
                 let privkey_pem = pairs.priv_key.to_pem().unwrap();
                 let keypair_regenerated = KeyPair::from_pem(privkey_pem).unwrap();
-                let pubkey_regenerated= keypair_regenerated.pub_key();
+                let pubkey_regenerated = keypair_regenerated.pub_key();
                 assert_eq!(pubkey.to_hex(), pubkey_regenerated.to_hex())
-            },
-            _ => panic!("unknown") 
+            }
+            _ => panic!("unknown"),
         }
     }
 
@@ -279,26 +284,26 @@ mod tests {
     fn test_decode_public_key_ecdh() {
         let key = AgreementKey::new();
         let pairs = key.generate();
-        
+
         let primary = Primary {
             id: "id".to_string(),
             controller: "controller".to_string(),
             verification_type: VERIFICATION_TYPE_X25519.to_string(),
             multibase: pairs.clone().pub_key,
-        };        
-        
+        };
+
         let decoded = primary.decode_pub_key();
         assert!(!decoded.is_err());
 
-        let decoded_pub_key = decoded.unwrap(); 
+        let decoded_pub_key = decoded.unwrap();
         assert!(matches!(decoded_pub_key, PublicKeyDecoded::ECDH(_)));
-        
+
         match decoded_pub_key {
             PublicKeyDecoded::ECDH(pubkey) => {
                 let keypair = pairs.priv_key;
                 assert_eq!(keypair.pub_key().to_hex(), pubkey.to_hex());
-            },
-            _ => panic!("unknown") 
+            }
+            _ => panic!("unknown"),
         }
     }
 
@@ -309,10 +314,13 @@ mod tests {
             controller: "controller".to_string(),
             verification_type: "unknown".to_string(),
             multibase: "".to_string(),
-        };        
-        
+        };
+
         let decoded = primary.decode_pub_key();
         assert!(decoded.is_err());
-        assert!(matches!(decoded.unwrap_err(), DIDError::DecodePubKeyError(_)))
+        assert!(matches!(
+            decoded.unwrap_err(),
+            DIDError::DecodePubKeyError(_)
+        ))
     }
 }

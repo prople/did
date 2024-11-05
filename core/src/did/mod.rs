@@ -179,7 +179,7 @@ mod tests {
         assert!(!jsondoc.is_err());
 
         let jsondoc_str = jsondoc.unwrap();
-        assert!(!jsondoc_str.clone().is_empty());
+        assert!(!jsondoc_str.to_string().is_empty());
     }
 
     #[test]
