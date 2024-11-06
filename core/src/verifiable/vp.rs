@@ -1,8 +1,9 @@
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
-use crate::types::{DIDError, ToJCS, ToJSON};
-use crate::verifiable::objects::{Proof, VC};
+use crate::types::{DIDError, JSONValue, ToJCS, ToJSON};
+use crate::verifiable::objects::VC;
+use crate::verifiable::proof::Proof;
 use crate::verifiable::types::{Context, Type};
 
 /// `VP` a main object used to generate `DID VP`. The `VP` object MUST contains
@@ -98,10 +99,14 @@ impl VP {
 }
 
 impl ToJSON for VP {
-    fn to_json(&self) -> Result<String, DIDError> {
+    fn to_json(&self) -> Result<JSONValue, DIDError> {
         match self.validate() {
-            Ok(_) => serde_json::to_string(self)
-                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
+            Ok(_) => {
+                let jsonstr = serde_json::to_string(self)
+                    .map_err(|err| DIDError::GenerateJSONError(err.to_string()))?;
+
+                Ok(JSONValue::from(jsonstr))
+            }
             Err(err) => Err(err),
         }
     }
@@ -135,7 +140,7 @@ mod tests {
         assert!(!try_json.is_err());
 
         let expected_json = r#"{"@context":["context1","context2"],"type":["type"],"verifiableCredential":[{"@context":[],"type":[],"credentialSubject":null,"id":"id1","issuer":"issuer"}]}"#;
-        assert_eq!(expected_json, try_json.unwrap())
+        assert_eq!(JSONValue::from(expected_json), try_json.unwrap())
     }
 
     #[test]

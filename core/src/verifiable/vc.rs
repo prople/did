@@ -2,8 +2,8 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json::{self, Value};
 
 use crate::types::DIDError;
-use crate::types::{ToJCS, ToJSON};
-use crate::verifiable::objects::Proof;
+use crate::types::{JSONValue, ToJCS, ToJSON};
+use crate::verifiable::proof::Proof;
 
 pub type Context = String;
 pub type ID = String;
@@ -102,11 +102,15 @@ impl VC {
 }
 
 impl ToJSON for VC {
-    fn to_json(&self) -> Result<String, DIDError> {
+    fn to_json(&self) -> Result<JSONValue, DIDError> {
         let validation = self.validate();
         match validation {
-            Ok(_) => serde_json::to_string(self)
-                .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
+            Ok(_) => {
+                let jsonstr = serde_json::to_string(self)
+                    .map_err(|err| DIDError::GenerateJSONError(err.to_string()))?;
+
+                Ok(JSONValue::from(jsonstr))
+            }
             Err(err) => Err(err),
         }
     }
@@ -166,7 +170,7 @@ mod tests {
         assert!(!json_str.is_err());
 
         let expected_json = r#"{"@context":["context1","context2"],"type":["VerifiableCredential"],"credentialSubject":{"connection":{"user_agent":"test_agent","user_did":"test_did"},"id":"id"},"id":"id","issuer":"issuer"}"#;
-        assert_eq!(json_str.unwrap(), expected_json.to_string())
+        assert_eq!(json_str.unwrap(), JSONValue::from(expected_json))
     }
 
     #[test]
