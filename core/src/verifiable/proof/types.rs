@@ -4,7 +4,7 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::with_errors::thiserror::{self, Error};
 
 use super::Proof;
-use crate::types::{ToJCS, Validator};
+use crate::types::{ToJCS, ToJSON, Validator};
 
 /// DEFAULT_PROOF_CRYPTOSUITE is an identifier used to verify the proof
 ///
@@ -106,7 +106,7 @@ pub enum ProofError {
 /// This trait also need to inherit behavior from the [`ToJCS`], to make sure that the
 /// implementer object already implement the JCS trait. It means that the implementer object
 /// should be serializable or able to convert it self into JCS format in string
-pub trait Proofable: ToJCS + Validator {
+pub trait Proofable: ToJSON + ToJCS + Validator {
     fn get_proof(&self) -> Option<Proof>;
     fn get_proof_purpose(&self) -> ProofPurpose;
     fn setup_proof(&self, proof: Proof) -> Self;
@@ -121,6 +121,7 @@ pub trait Proofable: ToJCS + Validator {
 ///
 /// Spec: https://www.w3.org/TR/vc-data-integrity/#dfn-secured-data-document
 /// Spec: https://www.w3.org/TR/vc-data-integrity/#dfn-cryptosuite-verification-result
+#[derive(Debug, Clone)]
 pub struct CryptoSuiteVerificationResult<T>
 where
     T: Clone + Debug + Serialize,

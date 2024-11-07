@@ -64,7 +64,9 @@ where
 
         // If one or more of proof.type, proof.verificationMethod, and proof.proofPurpose does not exist,
         // an error MUST be raised and SHOULD convey an error type of PROOF_VERIFICATION_ERROR
-        let _ = proof_doc.validate();
+        let _ = proof_doc
+            .validate()
+            .map_err(|err| ProofError::ProofVerificationError(err.to_string()))?;
 
         // If expectedProofPurpose was given, and it does not match proof.proofPurpose, an error MUST be
         // raised and SHOULD convey an error type of PROOF_VERIFICATION_ERROR
@@ -94,7 +96,7 @@ mod tests {
     use rst_common::standard::serde::Deserialize;
     use rst_common::standard::serde::{self, Serialize};
 
-    use crate::types::{DIDError, ToJCS};
+    use crate::types::{DIDError, JSONValue, ToJCS, ToJSON};
     use crate::verifiable::proof::Proof;
 
     #[derive(Serialize, Deserialize)]
@@ -117,6 +119,10 @@ mod tests {
 
         impl ToJCS for FakeProofable {
             fn to_jcs(&self) -> Result<String, DIDError>;
+        }
+
+        impl ToJSON for FakeProofable {
+            fn to_json(&self) -> Result<JSONValue, DIDError>;
         }
 
         impl Validator for FakeProofable {
@@ -352,7 +358,7 @@ mod tests {
                 let mock_proof_3 = proof.clone();
 
                 let mut mock_doc = MockFakeProofable::new();
-                mock_doc.expect_clone().returning( move || {
+                mock_doc.expect_clone().returning(move || {
                     let copy_proof_1 = mock_proof_1.clone();
                     let copy_proof_2 = mock_proof_2.clone();
 
@@ -391,6 +397,360 @@ mod tests {
 
                 let proof_doc = proofable.get_proof().unwrap();
                 assert_eq!(proof_doc, mock_proof_3)
+            }
+        }
+    }
+
+    mod verify_proof {
+        use super::*;
+
+        use std::sync::Mutex;
+        static LOCKER: Mutex<()> = Mutex::new(());
+
+        mod expect_errors {
+            use super::*;
+
+            mod validations {
+                use super::*;
+
+                #[test]
+                fn test_missing_type() {
+                    let _l = LOCKER.lock();
+
+                    let proof = Proof::default();
+                    let fake_proof_1 = proof.clone();
+
+                    let mut mock_doc = MockFakeProofable::new();
+                    mock_doc.expect_clone().returning(move || {
+                        let fake_proof_1 = fake_proof_1.clone();
+
+                        let mut out = MockFakeProofable::new();
+                        out.expect_fmt()
+                            .returning(|formatter| formatter.write_str("test"));
+
+                        out.expect_get_proof()
+                            .return_once(move || Some(fake_proof_1));
+                        out
+                    });
+
+                    mock_doc
+                        .expect_to_json()
+                        .returning(|| Ok(JSONValue::from("hello world")));
+
+                    let mock_doc_1 = mock_doc.clone();
+
+                    let ctx = MockFakeProofable::parse_json_bytes_context();
+                    ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                    let mock_crypto_instance = MockFakeCryptoSuite::new();
+                    let integrity = Integrity::new(mock_crypto_instance);
+                    let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                    let try_verify =
+                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                    assert!(try_verify.is_err());
+                    assert!(matches!(
+                        try_verify.clone().unwrap_err(),
+                        ProofError::ProofVerificationError(_)
+                    ));
+
+                    let err_msg = match try_verify.unwrap_err() {
+                        ProofError::ProofVerificationError(msg) => msg,
+                        _ => panic!("unknown error type"),
+                    };
+                    assert!(err_msg.contains("missing type"))
+                }
+
+                #[test]
+                fn test_missing_method() {
+                    let _l = LOCKER.lock();
+
+                    let mut proof = Proof::default();
+                    proof.typ("fake type".to_string());
+
+                    let fake_proof_1 = proof.clone();
+
+                    let mut mock_doc = MockFakeProofable::new();
+                    mock_doc.expect_clone().returning(move || {
+                        let fake_proof_1 = fake_proof_1.clone();
+
+                        let mut out = MockFakeProofable::new();
+                        out.expect_fmt()
+                            .returning(|formatter| formatter.write_str("test"));
+
+                        out.expect_get_proof()
+                            .return_once(move || Some(fake_proof_1));
+                        out
+                    });
+
+                    mock_doc
+                        .expect_to_json()
+                        .returning(|| Ok(JSONValue::from("hello world")));
+
+                    let mock_doc_1 = mock_doc.clone();
+
+                    let ctx = MockFakeProofable::parse_json_bytes_context();
+                    ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                    let mock_crypto_instance = MockFakeCryptoSuite::new();
+                    let integrity = Integrity::new(mock_crypto_instance);
+                    let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                    let try_verify =
+                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                    assert!(try_verify.is_err());
+                    assert!(matches!(
+                        try_verify.clone().unwrap_err(),
+                        ProofError::ProofVerificationError(_)
+                    ));
+
+                    let err_msg = match try_verify.unwrap_err() {
+                        ProofError::ProofVerificationError(msg) => msg,
+                        _ => panic!("unknown error type"),
+                    };
+                    assert!(err_msg.contains("missing verification method"))
+                }
+
+                #[test]
+                fn test_unknown_purpose() {
+                    let _l = LOCKER.lock();
+
+                    let mut proof = Proof::default();
+                    proof.typ("fake type".to_string());
+                    proof.method("fake-method".to_string());
+
+                    let fake_proof_1 = proof.clone();
+
+                    let mut mock_doc = MockFakeProofable::new();
+                    mock_doc.expect_clone().returning(move || {
+                        let fake_proof_1 = fake_proof_1.clone();
+
+                        let mut out = MockFakeProofable::new();
+                        out.expect_fmt()
+                            .returning(|formatter| formatter.write_str("test"));
+
+                        out.expect_get_proof()
+                            .return_once(move || Some(fake_proof_1));
+                        out
+                    });
+
+                    mock_doc
+                        .expect_to_json()
+                        .returning(|| Ok(JSONValue::from("hello world")));
+
+                    let mock_doc_1 = mock_doc.clone();
+
+                    let ctx = MockFakeProofable::parse_json_bytes_context();
+                    ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                    let mock_crypto_instance = MockFakeCryptoSuite::new();
+                    let integrity = Integrity::new(mock_crypto_instance);
+                    let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                    let try_verify =
+                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                    assert!(try_verify.is_err());
+                    assert!(matches!(
+                        try_verify.clone().unwrap_err(),
+                        ProofError::ProofVerificationError(_)
+                    ));
+
+                    let err_msg = match try_verify.unwrap_err() {
+                        ProofError::ProofVerificationError(msg) => msg,
+                        _ => panic!("unknown error type"),
+                    };
+                    assert!(err_msg.contains("unknown proof purpose"))
+                }
+            }
+
+            #[test]
+            fn test_error_parse_doc_bytes() {
+                let _l = LOCKER.lock();
+
+                let mut mock_doc = MockFakeProofable::new();
+                mock_doc.expect_clone().returning(|| {
+                    let mut out = MockFakeProofable::new();
+                    out.expect_fmt()
+                        .returning(|formatter| formatter.write_str("test"));
+
+                    out
+                });
+
+                mock_doc
+                    .expect_to_json()
+                    .returning(|| Ok(JSONValue::from("hello world")));
+
+                let ctx = MockFakeProofable::parse_json_bytes_context();
+                ctx.expect().once().returning(|_| {
+                    Err(ProofError::ProofVerificationError(
+                        "error parse doc bytes".to_string(),
+                    ))
+                });
+
+                let mock_crypto_instance = MockFakeCryptoSuite::new();
+                let integrity = Integrity::new(mock_crypto_instance);
+                let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                assert!(try_verify.is_err());
+                assert!(matches!(
+                    try_verify.clone().unwrap_err(),
+                    ProofError::ProofVerificationError(_)
+                ));
+
+                let err_msg = match try_verify.unwrap_err() {
+                    ProofError::ProofVerificationError(msg) => msg,
+                    _ => panic!("unknown error type"),
+                };
+                assert!(err_msg.contains("error parse doc bytes"))
+            }
+
+            #[test]
+            fn test_error_missing_proof_doc() {
+                let _l = LOCKER.lock();
+
+                let mut mock_doc = MockFakeProofable::new();
+                mock_doc.expect_clone().returning(|| {
+                    let mut out = MockFakeProofable::new();
+                    out.expect_fmt()
+                        .returning(|formatter| formatter.write_str("test"));
+
+                    out.expect_get_proof().returning(|| None);
+                    out
+                });
+
+                mock_doc
+                    .expect_to_json()
+                    .returning(|| Ok(JSONValue::from("hello world")));
+
+                let mock_doc_1 = mock_doc.clone();
+
+                let ctx = MockFakeProofable::parse_json_bytes_context();
+                ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                let mock_crypto_instance = MockFakeCryptoSuite::new();
+                let integrity = Integrity::new(mock_crypto_instance);
+                let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                assert!(try_verify.is_err());
+                assert!(matches!(
+                    try_verify.clone().unwrap_err(),
+                    ProofError::ProofVerificationError(_)
+                ));
+
+                let err_msg = match try_verify.unwrap_err() {
+                    ProofError::ProofVerificationError(msg) => msg,
+                    _ => panic!("unknown error type"),
+                };
+                assert!(err_msg.contains("missing document proof"))
+            }
+
+            #[test]
+            fn test_error_mismatch_proof_purpose() {
+                let _l = LOCKER.lock();
+
+                let mut proof = Proof::new("fake-id".to_string());
+                proof.method("fake-method".to_string());
+                proof.purpose(ProofPurpose::Authentication.to_string());
+
+                let fake_proof_1 = proof.clone();
+
+                let mut mock_doc = MockFakeProofable::new();
+                mock_doc.expect_clone().returning(move || {
+                    let fake_proof_1 = fake_proof_1.clone();
+
+                    let mut out = MockFakeProofable::new();
+                    out.expect_fmt()
+                        .returning(|formatter| formatter.write_str("test"));
+
+                    out.expect_get_proof()
+                        .return_once(move || Some(fake_proof_1));
+                    out
+                });
+
+                mock_doc
+                    .expect_to_json()
+                    .returning(|| Ok(JSONValue::from("hello world")));
+
+                let mock_doc_1 = mock_doc.clone();
+
+                let ctx = MockFakeProofable::parse_json_bytes_context();
+                ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                let mock_crypto_instance = MockFakeCryptoSuite::new();
+                let integrity = Integrity::new(mock_crypto_instance);
+                let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                assert!(try_verify.is_err());
+                assert!(matches!(
+                    try_verify.clone().unwrap_err(),
+                    ProofError::ProofVerificationError(_)
+                ));
+
+                let err_msg = match try_verify.unwrap_err() {
+                    ProofError::ProofVerificationError(msg) => msg,
+                    _ => panic!("unknown error type"),
+                };
+                assert!(err_msg.contains("mismatch proof purpose"))
+            }
+        }
+
+        mod expect_success {
+            use super::*;
+
+            #[test]
+            fn test_verify_success() {
+                let _l = LOCKER.lock();
+
+                let mut proof = Proof::new("fake-id".to_string());
+                proof.method("fake-method".to_string());
+                proof.purpose(ProofPurpose::AssertionMethod.to_string());
+
+                let fake_proof_1 = proof.clone();
+
+                let mut mock_doc = MockFakeProofable::new();
+                mock_doc.expect_clone().returning(move || {
+                    let fake_proof_1 = fake_proof_1.clone();
+
+                    let mut out = MockFakeProofable::new();
+                    out.expect_fmt()
+                        .returning(|formatter| formatter.write_str("test"));
+
+                    out.expect_get_proof()
+                        .return_once(move || Some(fake_proof_1));
+                    out
+                });
+
+                mock_doc
+                    .expect_to_json()
+                    .returning(|| Ok(JSONValue::from("hello world")));
+
+                let mock_doc_1 = mock_doc.clone();
+
+                let ctx = MockFakeProofable::parse_json_bytes_context();
+                ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
+
+                let verification_result = CryptoSuiteVerificationResult{
+                    verified: true,
+                    document: Some(mock_doc.clone()) 
+                };
+
+                let mut mock_crypto_instance = MockFakeCryptoSuite::new();
+                mock_crypto_instance.expect_verify_proof().return_once(move |_| {
+                    Ok(verification_result)
+                });
+
+                let integrity = Integrity::new(mock_crypto_instance);
+                let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
+
+                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                assert!(try_verify.is_ok());
+
+                let verify_result = try_verify.unwrap();
+                assert!(verify_result.verified);
+                assert!(verify_result.document.is_some());
             }
         }
     }
