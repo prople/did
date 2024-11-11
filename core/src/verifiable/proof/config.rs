@@ -1,12 +1,39 @@
-use super::types::{ProofConfigValidator, ProofError};
+use rst_common::with_cryptography::sha2::{Digest, Sha256};
+
+use super::types::{Hasher, ProofConfigValidator, ProofError};
 use crate::types::ToJCS;
+
+#[derive(Clone, Debug)]
+pub(crate) struct ProofConfig(String);
+
+impl From<String> for ProofConfig {
+    fn from(value: String) -> Self {
+        ProofConfig(value)
+    }
+}
+
+impl ToString for ProofConfig {
+    fn to_string(&self) -> String {
+        self.0.to_owned()
+    }
+}
+
+impl Hasher for ProofConfig {
+    fn hash(&self) -> Result<Vec<u8>, ProofError> {
+        let mut hasher = Sha256::new();
+        hasher.update(self.0.as_bytes());
+
+        let hashed = hasher.finalize();
+        Ok(hashed.to_vec())
+    }
+}
 
 /// generate_proof_config build based on algorithm from the `eddsa-jcs-2022` from
 /// its formal spec
 ///
 /// The algorithm specific only to generate canonical config based on JCS
 /// Spec: https://www.w3.org/TR/vc-di-eddsa/#proof-configuration-eddsa-jcs-2022
-pub(crate) fn generate_proof_config<T>(options: T) -> Result<String, ProofError>
+pub(crate) fn generate_proof_config<T>(options: T) -> Result<ProofConfig, ProofError>
 where
     T: ProofConfigValidator + ToJCS,
 {
@@ -24,7 +51,7 @@ where
         .to_jcs()
         .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
 
-    Ok(canonical_proof_config)
+    Ok(ProofConfig::from(canonical_proof_config))
 }
 
 #[cfg(test)]

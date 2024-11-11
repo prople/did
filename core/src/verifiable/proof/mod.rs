@@ -9,6 +9,7 @@ use rst_common::with_cryptography::blake3::{self, Hash};
 use crate::types::{DIDError, ToJCS, Validator};
 
 pub(crate) mod config;
+pub(crate) mod hash;
 pub(crate) mod transform;
 
 pub mod eddsa;

@@ -167,3 +167,7 @@ where
         secured_document: T,
     ) -> Result<CryptoSuiteVerificationResult<T>, ProofError>;
 }
+
+pub trait Hasher: Clone {
+    fn hash(&self) -> Result<Vec<u8>, ProofError>;
+}

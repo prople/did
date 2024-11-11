@@ -1,16 +1,46 @@
-use super::types::{ProofError, ProofOptionsValidator};
+use super::types::{Hasher, ProofError, ProofOptionsValidator};
+use rst_common::with_cryptography::sha2::{Digest, Sha256};
+
 use crate::types::ToJCS;
 
-/// transform_document used to transform given unsecured document into "secured document" 
-/// 
+#[derive(Clone, Debug)]
+pub(crate) struct TransformedDoc(String);
+
+impl From<String> for TransformedDoc {
+    fn from(value: String) -> Self {
+        TransformedDoc(value)
+    }
+}
+
+impl ToString for TransformedDoc {
+    fn to_string(&self) -> String {
+        self.0.to_owned()
+    }
+}
+
+impl Hasher for TransformedDoc {
+    fn hash(&self) -> Result<Vec<u8>, ProofError> {
+        let mut hasher = Sha256::new();
+        hasher.update(self.0.as_bytes());
+
+        let hashed = hasher.finalize();
+        Ok(hashed.to_vec())
+    }
+}
+
+/// transform_document used to transform given unsecured document into "secured document"
+///
 /// The definition of "transform" actually apply the JCS standard into unsecured document, with
 /// the expected output is string value of JCS
-/// 
+///
 /// Spec: https://www.w3.org/TR/vc-di-eddsa/#transformation-eddsa-jcs-2022
-pub(crate) fn transform_document<TDoc, TOpts>(doc: TDoc, opts: TOpts) -> Result<String, ProofError>
+pub(crate) fn transform_document<TDoc, TOpts>(
+    doc: TDoc,
+    opts: TOpts,
+) -> Result<TransformedDoc, ProofError>
 where
     TDoc: ToJCS,
-    TOpts: ProofOptionsValidator
+    TOpts: ProofOptionsValidator,
 {
     let _ = opts.validate_type()?;
     let _ = opts.validate_cryptosuite()?;
@@ -19,7 +49,7 @@ where
         .to_jcs()
         .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
 
-    Ok(canonical_document)
+    Ok(TransformedDoc::from(canonical_document))
 }
 
 #[cfg(test)]
@@ -29,16 +59,16 @@ mod tests {
     use std::fmt::Debug;
     use std::fmt::Formatter;
     use std::fmt::Result as FmtResult;
-    
+
     use mockall::mock;
-    
+
     use rst_common::standard::serde::Deserialize;
     use rst_common::standard::serde::{self, Serialize};
-    
-    use crate::types::{DIDError, ToJCS, ToJSON, JSONValue, Validator};
-    use crate::verifiable::proof::Proof;
+
+    use crate::types::{DIDError, JSONValue, ToJCS, ToJSON, Validator};
     use crate::verifiable::proof::types::{ProofPurpose, Proofable};
-    
+    use crate::verifiable::proof::Proof;
+
     #[derive(Serialize, Deserialize)]
     #[serde(crate = "self::serde")]
     struct ProofOptions;
@@ -85,7 +115,7 @@ mod tests {
             Ok(MockFakeProofOptions::private_deserialize(serializable))
         }
     }
-    
+
     #[derive(Serialize, Deserialize)]
     #[serde(crate = "self::serde")]
     struct WrapperProofable;
@@ -161,7 +191,7 @@ mod tests {
 
                 let try_transform_doc = transform_document(mock_doc, mock_options);
                 assert!(try_transform_doc.is_err());
-            
+
                 assert!(matches!(
                     try_transform_doc.clone().unwrap_err(),
                     ProofError::ProofGenerationError(_)
@@ -180,16 +210,22 @@ mod tests {
                 let mock_doc = MockFakeProofable::new();
 
                 let mut mock_options = MockFakeProofOptions::new();
-                mock_options.expect_validate_type().once().returning(|| Ok(()));
-                mock_options.expect_validate_cryptosuite().once().returning(|| {
-                    Err(ProofError::ProofGenerationError(
-                        "invalid cryptosuite".to_string(),
-                    ))
-                });
-                
+                mock_options
+                    .expect_validate_type()
+                    .once()
+                    .returning(|| Ok(()));
+                mock_options
+                    .expect_validate_cryptosuite()
+                    .once()
+                    .returning(|| {
+                        Err(ProofError::ProofGenerationError(
+                            "invalid cryptosuite".to_string(),
+                        ))
+                    });
+
                 let try_transform_doc = transform_document(mock_doc, mock_options);
                 assert!(try_transform_doc.is_err());
-            
+
                 assert!(matches!(
                     try_transform_doc.clone().unwrap_err(),
                     ProofError::ProofGenerationError(_)
@@ -210,22 +246,29 @@ mod tests {
             #[test]
             fn test_error_to_jcs() {
                 let mut mock_doc = MockFakeProofable::new();
-                mock_doc.expect_to_jcs().once().returning(|| {
-                    Err(DIDError::GenerateJSONJCSError("error jcs".to_string()))
-                });
-                
+                mock_doc
+                    .expect_to_jcs()
+                    .once()
+                    .returning(|| Err(DIDError::GenerateJSONJCSError("error jcs".to_string())));
+
                 let mut mock_options = MockFakeProofOptions::new();
-                mock_options.expect_validate_type().once().returning(|| Ok(()));
-                mock_options.expect_validate_cryptosuite().once().returning(|| Ok(()));
-                
+                mock_options
+                    .expect_validate_type()
+                    .once()
+                    .returning(|| Ok(()));
+                mock_options
+                    .expect_validate_cryptosuite()
+                    .once()
+                    .returning(|| Ok(()));
+
                 let try_transform_doc = transform_document(mock_doc, mock_options);
                 assert!(try_transform_doc.is_err());
-                
+
                 assert!(matches!(
                     try_transform_doc.clone().unwrap_err(),
                     ProofError::ProofGenerationError(_)
                 ));
-                
+
                 let err_msg = match try_transform_doc.unwrap_err() {
                     ProofError::ProofGenerationError(msg) => msg,
                     _ => panic!("unknown error"),
@@ -242,17 +285,26 @@ mod tests {
         #[test]
         fn test_success() {
             let mut mock_doc = MockFakeProofable::new();
-            mock_doc.expect_to_jcs().once().returning(|| Ok("jcs".to_string()));
-                
+            mock_doc
+                .expect_to_jcs()
+                .once()
+                .returning(|| Ok("jcs".to_string()));
+
             let mut mock_options = MockFakeProofOptions::new();
-            mock_options.expect_validate_type().once().returning(|| Ok(()));
-            mock_options.expect_validate_cryptosuite().once().returning(|| Ok(()));
-                
+            mock_options
+                .expect_validate_type()
+                .once()
+                .returning(|| Ok(()));
+            mock_options
+                .expect_validate_cryptosuite()
+                .once()
+                .returning(|| Ok(()));
+
             let try_transform_doc = transform_document(mock_doc, mock_options);
             assert!(try_transform_doc.is_ok());
 
             let output = try_transform_doc.unwrap();
-            assert_eq!(output, "jcs".to_string())
+            assert_eq!(output.to_string(), "jcs".to_string())
         }
     }
 }
