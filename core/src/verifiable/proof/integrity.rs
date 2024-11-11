@@ -732,15 +732,15 @@ mod tests {
                 let ctx = MockFakeProofable::parse_json_bytes_context();
                 ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
 
-                let verification_result = CryptoSuiteVerificationResult{
+                let verification_result = CryptoSuiteVerificationResult {
                     verified: true,
-                    document: Some(mock_doc.clone()) 
+                    document: Some(mock_doc.clone()),
                 };
 
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
-                mock_crypto_instance.expect_verify_proof().return_once(move |_| {
-                    Ok(verification_result)
-                });
+                mock_crypto_instance
+                    .expect_verify_proof()
+                    .return_once(move |_| Ok(verification_result));
 
                 let integrity = Integrity::new(mock_crypto_instance);
                 let mock_bytes = mock_doc.to_json().unwrap().to_bytes();

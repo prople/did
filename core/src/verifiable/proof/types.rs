@@ -96,6 +96,26 @@ pub enum ProofError {
     InvalidChallengeError(String),
 }
 
+/// ProofOptionsValidator used to validate primary fields for the proof_options
+/// that contains two things: proof_type & proof_cryptosuite
+///
+/// This trait is a main trait for all proof options and other necessary traits
+/// should be inherit this trait, such as for the [`ProofConfigValidator`]
+pub trait ProofOptionsValidator {
+    fn validate_type(&self) -> Result<(), ProofError>;
+    fn validate_cryptosuite(&self) -> Result<(), ProofError>;
+}
+
+/// ProofConfigValidator is a trait built by following algorithm defined at its
+/// formal spec to create proof configuration
+///
+/// This trait must be implemented by [`Proof`] object
+///
+/// Spec: https://www.w3.org/TR/vc-di-eddsa/#proof-configuration-eddsa-jcs-2022
+pub trait ProofConfigValidator: ProofOptionsValidator {
+    fn validate_created(&self) -> Result<(), ProofError>;
+}
+
 /// Proofable is a trait behavior that must be implemented by any objects
 /// that need a [`Proof`] on its properties
 ///

@@ -2,15 +2,23 @@ use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
 
+use rst_common::standard::chrono::{DateTime, Utc};
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::with_cryptography::blake3::{self, Hash};
 
 use crate::types::{DIDError, ToJCS, Validator};
 
+pub(crate) mod config;
+pub(crate) mod transform;
+
+pub mod eddsa;
 pub mod integrity;
 pub mod types;
 
-use types::{ProofPurpose, DEFAULT_PROOF_CRYPTOSUITE, DEFAULT_PROOF_TYPE};
+use types::{
+    ProofConfigValidator, ProofError, ProofOptionsValidator, ProofPurpose,
+    DEFAULT_PROOF_CRYPTOSUITE, DEFAULT_PROOF_TYPE,
+};
 
 /// `Proof` is an object used to generate `DID Proof` used at `VC` and `VP`
 ///
@@ -128,6 +136,56 @@ impl Validator for Proof {
             }
             _ => Ok(()),
         }
+    }
+}
+
+impl ProofOptionsValidator for Proof {
+    fn validate_type(&self) -> Result<(), types::ProofError> {
+        if self.typ != DEFAULT_PROOF_TYPE {
+            return Err(types::ProofError::ProofGenerationError(
+                "invalid proof type".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn validate_cryptosuite(&self) -> Result<(), types::ProofError> {
+        match self.cryptosuite.to_owned() {
+            Some(suite) => {
+                if suite != DEFAULT_PROOF_CRYPTOSUITE {
+                    return Err(ProofError::ProofGenerationError(
+                        "invalid cryptosuite".to_string(),
+                    ));
+                }
+            }
+            _ => {
+                return Err(ProofError::ProofGenerationError(
+                    "missing cryptosuite".to_string(),
+                ))
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl ProofConfigValidator for Proof {
+    fn validate_created(&self) -> Result<(), ProofError> {
+        match self.created.to_owned() {
+            Some(created) => {
+                let _ = created
+                    .parse::<DateTime<Utc>>()
+                    .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
+            }
+            _ => {
+                return Err(ProofError::ProofGenerationError(
+                    "invalid created format".to_string(),
+                ))
+            }
+        }
+
+        Ok(())
     }
 }
 
