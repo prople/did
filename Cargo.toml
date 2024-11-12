@@ -6,5 +6,5 @@ members = [
 
 [workspace.package]
 authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
-rust-version = "1.74"
+rust-version = "1.75"
 license = "GPL-3.0-only"
