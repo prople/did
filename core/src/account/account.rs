@@ -1,7 +1,9 @@
+use prople_crypto::passphrase::types::SaltBytes;
+use prople_crypto::types::VectorValue;
 use rst_common::with_cryptography::hex;
 use rst_common::with_errors::thiserror::{self, Error};
 
-use prople_crypto::aead::{Key, AEAD};
+use prople_crypto::aead::{Key, KeyEncryption, KeyNonce, MessageCipher, AEAD};
 use prople_crypto::keysecure::KeySecure;
 
 use prople_crypto::eddsa::keypair::KeyPair;
@@ -72,7 +74,7 @@ impl Account {
         let kdf = Passphrase::new(passphrase_kdf_params);
         let salt_vec = kdf_params.salt.as_bytes().to_vec();
         let kdf_hash = kdf
-            .hash(password, salt_vec.clone())
+            .hash(password, SaltBytes::from(salt_vec.clone()))
             .map_err(|err| AccountError::DecodeError(err.to_string()))?;
 
         let nonce = keysecure.crypto.cipher_params.nonce;
@@ -84,11 +86,11 @@ impl Account {
             .try_into()
             .map_err(|_| AccountError::DecodeError("unable to decode nonce".to_string()))?;
 
-        let key = Key::generate(kdf_hash, nonce_value);
-        let decrypted = AEAD::decrypt(&key, &decoded_encrypted_text)
+        let key = Key::new(KeyEncryption::from(kdf_hash), KeyNonce::from(nonce_value));
+        let decrypted = AEAD::decrypt(&key, &MessageCipher::from(decoded_encrypted_text))
             .map_err(|err| AccountError::DecodeError(err.to_string()))?;
 
-        let to_pem = String::from_utf8(decrypted)
+        let to_pem = String::from_utf8(decrypted.vec())
             .map_err(|err| AccountError::DecodeError(err.to_string()))?;
 
         Account::from_pem(to_pem)
@@ -109,7 +111,7 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
-    use prople_crypto::keysecure::types::ToKeySecure;
+    use prople_crypto::keysecure::types::{Password, ToKeySecure};
 
     use super::*;
 
@@ -149,7 +151,9 @@ mod tests {
         assert!(!try_pem.is_err());
 
         let original_pem = try_pem.unwrap();
-        let try_keysecure = account.privkey().to_keysecure("password".to_string());
+        let try_keysecure = account
+            .privkey()
+            .to_keysecure(Password::from("password".to_string()));
         assert!(!try_keysecure.is_err());
 
         let keysecure = try_keysecure.unwrap();
@@ -164,7 +168,9 @@ mod tests {
     #[test]
     fn test_build_from_keysecure_invalid_password() {
         let account = Account::new();
-        let try_keysecure = account.privkey().to_keysecure("password".to_string());
+        let try_keysecure = account
+            .privkey()
+            .to_keysecure(Password::from("password".to_string()));
         assert!(!try_keysecure.is_err());
 
         let keysecure = try_keysecure.unwrap();

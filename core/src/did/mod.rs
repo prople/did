@@ -1,6 +1,7 @@
 //! `did` module used to generated the `DID Syntax` based on generated [`IdentityPayload`] data
 use multibase::Base::Base58Btc;
 
+use prople_crypto::types::BytesValue;
 use rst_common::with_cryptography::blake3;
 use rst_common::with_cryptography::sha2::{Digest, Sha384};
 
@@ -54,7 +55,7 @@ impl DID {
         let pubkey_in_bytes = pubkey.serialize();
 
         let mut sha3_hasher = Sha384::new();
-        sha3_hasher.update(pubkey_in_bytes);
+        sha3_hasher.update(pubkey_in_bytes.bytes());
 
         let pubkey_sha3 = sha3_hasher.finalize();
         let pubkey_blake3 = blake3::hash(pubkey_sha3.as_ref());
@@ -122,7 +123,7 @@ impl DID {
 mod tests {
     use super::*;
 
-    use prople_crypto::keysecure::types::ToKeySecure;
+    use prople_crypto::keysecure::types::{Password, ToKeySecure};
 
     use crate::doc::types::ToDoc;
     use crate::keys::IdentityPrivateKeyPairsBuilder;
@@ -235,7 +236,7 @@ mod tests {
 
         let keysecure = account_priv_key
             .clone()
-            .to_keysecure("password".to_string())
+            .to_keysecure(Password::from("password".to_string()))
             .unwrap();
 
         let try_rebuild_did = DID::from_keysecure("password".to_string(), keysecure);
@@ -258,7 +259,7 @@ mod tests {
 
         let keysecure = account_priv_key
             .clone()
-            .to_keysecure("password".to_string())
+            .to_keysecure(Password::from("password".to_string()))
             .unwrap();
 
         let try_rebuild_did = DID::from_keysecure("invalid".to_string(), keysecure);

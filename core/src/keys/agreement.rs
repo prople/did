@@ -1,11 +1,12 @@
 use multibase::{self, Base::Base58Btc};
 
+use prople_crypto::types::ByteHex;
 use rst_common::with_errors::thiserror::Error as ThisError;
 
-use prople_crypto::ecdh::keypair::KeyPair;
 use prople_crypto::ecdh::pubkey::PublicKey;
-use prople_crypto::keysecure::types::ToKeySecure;
+use prople_crypto::keysecure::types::{Password, ToKeySecure};
 use prople_crypto::keysecure::KeySecure;
+use prople_crypto::{ecdh::keypair::KeyPair, types::Hexer};
 
 use crate::keys::{KeySecureBuilder, KeySecureError};
 
@@ -24,17 +25,19 @@ pub struct Pairs {
 
 impl Pairs {
     pub fn is_valid(&self) -> bool {
-        let keypair_hex = self.priv_key.to_hex();
+        let keypair_hex = self.priv_key.to_hex().hex();
         !self.pub_key.is_empty() || !keypair_hex.is_empty()
     }
 
     pub fn decode_public_key(&self) -> Result<PublicKey, Error> {
         let (_, pubkey_bytes) =
             multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
+
         let pubkey_string =
             String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
-        let pubkey =
-            PublicKey::from_hex(&pubkey_string).map_err(|_| Error::DecodePublicKeyError)?;
+
+        let pubkey = PublicKey::from_hex(ByteHex::from(pubkey_string))
+            .map_err(|_| Error::DecodePublicKeyError)?;
 
         Ok(pubkey)
     }
@@ -43,7 +46,7 @@ impl Pairs {
 impl KeySecureBuilder for Pairs {
     fn build_keysecure(&self, password: String) -> Result<KeySecure, KeySecureError> {
         self.priv_key
-            .to_keysecure(password)
+            .to_keysecure(Password::from(password))
             .map_err(|_| KeySecureError::BuildKeySecureError)
     }
 }
@@ -64,7 +67,7 @@ impl Key {
 
     pub fn generate(&self) -> Pairs {
         let pub_key = self.keypair.pub_key().to_hex();
-        let pub_key_encoded = multibase::encode(Base58Btc, pub_key.as_bytes());
+        let pub_key_encoded = multibase::encode(Base58Btc, pub_key.hex().as_bytes());
 
         Pairs {
             pub_key: pub_key_encoded,

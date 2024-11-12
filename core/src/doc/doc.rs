@@ -1,5 +1,6 @@
 use multibase;
 
+use prople_crypto::types::ByteHex;
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
@@ -57,7 +58,7 @@ impl Primary {
             DIDError::DecodePubKeyError("unable convert public key to string".to_string())
         })?;
 
-        let pubkey = EdDSAPubKey::from_hex(pubkey_string)
+        let pubkey = EdDSAPubKey::from_hex(ByteHex::from(pubkey_string))
             .map_err(|_| DIDError::DecodePubKeyError("unable to restore public key".to_string()))?;
         Ok(pubkey)
     }
@@ -73,7 +74,7 @@ impl Primary {
             DIDError::DecodePubKeyError("unable convert public key to string".to_string())
         })?;
 
-        let pubkey = ECDHPubKey::from_hex(&pubkey_string)
+        let pubkey = ECDHPubKey::from_hex(ByteHex::from(pubkey_string))
             .map_err(|_| DIDError::DecodePubKeyError("unable to restore public key".to_string()))?;
 
         Ok(pubkey)

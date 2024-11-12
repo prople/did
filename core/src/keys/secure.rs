@@ -1,3 +1,4 @@
+use prople_crypto::types::VectorValue;
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 use rst_common::with_errors::thiserror::{self, Error as ThisError};
@@ -51,7 +52,7 @@ impl PrivateKeyPairs {
             .decrypt(password)
             .map_err(|err| Error::DecryptError(err.to_string()))?;
 
-        Ok(decrypted)
+        Ok(decrypted.vec())
     }
 
     pub fn decrypt_agreement(&self, password: String) -> Result<Vec<u8>, Error> {
@@ -60,7 +61,7 @@ impl PrivateKeyPairs {
             .decrypt(password)
             .map_err(|err| Error::DecryptError(err.to_string()))?;
 
-        Ok(decrypted)
+        Ok(decrypted.vec())
     }
 }
 
