@@ -1,5 +1,7 @@
 use super::types::{Hasher, ProofError};
 
+/// HashedData is a new type to represent hashed data that contains a concatenation
+/// between proof config and its transformed document
 #[derive(Clone, Debug)]
 pub(crate) struct HashedData(Vec<u8>);
 
@@ -138,13 +140,14 @@ mod tests {
                 .returning(|| Ok(b"hello doc".to_vec()));
 
             let mut mock_proof_config = MockFakeHasher::new();
-            mock_proof_config.expect_hash().once().returning(|| {
-                Ok(b"hello config".to_vec())
-            });
+            mock_proof_config
+                .expect_hash()
+                .once()
+                .returning(|| Ok(b"hello config".to_vec()));
 
             let try_hash = generate_hash(mock_document_hasher, mock_proof_config);
             assert!(try_hash.is_ok());
-            
+
             let message_1 = b"hello doc".as_slice();
             let message_2 = b"hello config".as_slice();
 

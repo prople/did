@@ -1,6 +1,7 @@
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
+use prople_crypto::types::ByteHex;
 
 use rst_common::standard::chrono::{DateTime, Utc};
 use rst_common::standard::serde::{self, Deserialize, Serialize};
@@ -10,6 +11,7 @@ use crate::types::{DIDError, ToJCS, Validator};
 
 pub(crate) mod config;
 pub(crate) mod hash;
+pub(crate) mod serialize;
 pub(crate) mod transform;
 
 pub mod eddsa;
@@ -236,7 +238,7 @@ impl Value {
 
         let public_key = keypair.pub_key();
         public_key
-            .verify(hashed.as_bytes(), sig)
+            .verify(hashed.as_bytes(), ByteHex::from(sig))
             .map_err(|_| DIDError::ProofInvalid)
     }
 
@@ -254,7 +256,7 @@ impl Value {
 
         let hashed = blake3::hash(tojcs.as_bytes());
         public_key
-            .verify(hashed.as_bytes(), sig)
+            .verify(hashed.as_bytes(), ByteHex::from(sig))
             .map_err(|_| DIDError::ProofInvalid)
     }
 
@@ -270,7 +272,6 @@ mod tests {
     use prople_crypto::eddsa::types::errors::EddsaError;
     use rst_common::standard::serde_json;
     use rst_common::standard::uuid;
-    use rst_common::with_cryptography::hex;
 
     use crate::types::ToJCS;
     use crate::verifiable::objects::{VC, VP};
@@ -299,8 +300,10 @@ mod tests {
         let proof_value = value.generate();
 
         let pubkey = keypair.clone().pub_key();
-        let try_verify_value =
-            pubkey.verify(hashed_message.clone().as_bytes(), proof_value.clone());
+        let try_verify_value = pubkey.verify(
+            hashed_message.clone().as_bytes(),
+            ByteHex::from(proof_value.clone()),
+        );
         assert!(!try_verify_value.is_err());
         assert!(try_verify_value.unwrap());
     }
@@ -313,14 +316,18 @@ mod tests {
         let keypair = KeyPair::generate();
         let pubkey = keypair.clone().pub_key();
 
-        let invalid_hex = hex::encode("invalid");
-        let try_verify_value = pubkey.verify(hashed_message.clone().as_bytes(), invalid_hex);
+        let value = Value::new(keypair.clone(), b"invalid");
+        let proof_value = value.generate();
+
+        let try_verify_value = pubkey.verify(
+            hashed_message.clone().as_bytes(),
+            ByteHex::from(proof_value),
+        );
 
         assert!(try_verify_value.is_err());
-        assert!(matches!(
-            try_verify_value,
-            Err(EddsaError::InvalidSignatureError(_))
-        ))
+
+        let err = try_verify_value.unwrap_err();
+        assert!(matches!(err, EddsaError::InvalidSignatureError(_)))
     }
 
     #[test]
@@ -354,7 +361,10 @@ mod tests {
         let proof_value = value.generate();
 
         let pubkey = keypair.clone().pub_key();
-        let try_verify_value = pubkey.verify(vc_jcs.clone().as_bytes(), proof_value.clone());
+        let try_verify_value = pubkey.verify(
+            vc_jcs.clone().as_bytes(),
+            ByteHex::from(proof_value.clone()),
+        );
         assert!(!try_verify_value.is_err());
         assert!(try_verify_value.unwrap());
     }
@@ -487,7 +497,10 @@ mod tests {
         let proof_value = value.generate();
 
         let pubkey = keypair.clone().pub_key();
-        let try_verify_value = pubkey.verify(vp_jcs.clone().as_bytes(), proof_value.clone());
+        let try_verify_value = pubkey.verify(
+            vp_jcs.clone().as_bytes(),
+            ByteHex::from(proof_value.clone()),
+        );
         assert!(!try_verify_value.is_err());
         assert!(try_verify_value.unwrap());
     }
@@ -539,7 +552,8 @@ mod tests {
         let signature = transformed.clone().1;
 
         let pubkey = keypair.clone().pub_key();
-        let try_verify_value = pubkey.verify(hashed.clone().as_bytes(), signature.clone());
+        let try_verify_value =
+            pubkey.verify(hashed.clone().as_bytes(), ByteHex::from(signature.clone()));
         assert!(!try_verify_value.is_err());
     }
 
@@ -574,7 +588,8 @@ mod tests {
         let signature = transformed.clone().1;
 
         let pubkey = keypair.clone().pub_key();
-        let try_verify_value = pubkey.verify(hashed.clone().as_bytes(), signature.clone());
+        let try_verify_value =
+            pubkey.verify(hashed.clone().as_bytes(), ByteHex::from(signature.clone()));
         assert!(!try_verify_value.is_err());
     }
 }

@@ -3,6 +3,10 @@ use rst_common::with_cryptography::sha2::{Digest, Sha256};
 use super::types::{Hasher, ProofConfigValidator, ProofError};
 use crate::types::ToJCS;
 
+/// ProofConfig is a new type that represent canonical's version of 
+/// proof config
+/// 
+/// It contains a string value of JSON that already applied JCS scheme 
 #[derive(Clone, Debug)]
 pub(crate) struct ProofConfig(String);
 
