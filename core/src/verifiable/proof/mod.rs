@@ -1,3 +1,5 @@
+use serde_jcs;
+
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::pubkey::PubKey;
 use prople_crypto::eddsa::signature::Signature;
@@ -189,6 +191,14 @@ impl ProofConfigValidator for Proof {
         }
 
         Ok(())
+    }
+}
+
+impl ToJCS for Proof {
+    fn to_jcs(&self) -> Result<String, DIDError> {
+        let output = serde_jcs::to_string(self)
+            .map_err(|err| DIDError::GenerateJSONJCSError(err.to_string()))?;
+        Ok(output)
     }
 }
 

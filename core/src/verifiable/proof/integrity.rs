@@ -5,21 +5,22 @@ use crate::types::Validator;
 use super::types::{
     CryptoSuiteBuilder, CryptoSuiteVerificationResult, ProofError, ProofPurpose, Proofable,
 };
+use super::Proof;
 
 #[derive(Clone, Debug)]
-pub struct Integrity<TDoc, TCs, TOpts>
+pub struct Integrity<TDoc, TCs>
 where
     TDoc: Proofable,
-    TCs: CryptoSuiteBuilder<TDoc, ProofOptions = TOpts>,
+    TCs: CryptoSuiteBuilder<TDoc>,
 {
     cryptosuite_instance: TCs,
     _phantom_doc: PhantomData<TDoc>,
 }
 
-impl<TDoc, TCs, TOpts> Integrity<TDoc, TCs, TOpts>
+impl<TDoc, TCs> Integrity<TDoc, TCs>
 where
     TDoc: Proofable,
-    TCs: CryptoSuiteBuilder<TDoc, ProofOptions = TOpts>,
+    TCs: CryptoSuiteBuilder<TDoc>,
 {
     pub fn new(instance: TCs) -> Self {
         Self {
@@ -34,7 +35,7 @@ where
     /// because it already been set on [`Integrity::new`] method
     ///
     /// Spec: https://www.w3.org/TR/vc-data-integrity/#add-proof
-    pub fn add_proof(&self, doc: TDoc, opts: Option<TOpts>) -> Result<TDoc, ProofError> {
+    pub fn add_proof(&self, doc: TDoc, opts: Proof) -> Result<TDoc, ProofError> {
         let proof = self.cryptosuite_instance.create_proof(doc.clone(), opts)?;
         let _ = proof
             .validate()
@@ -168,12 +169,10 @@ mod tests {
         }
 
         impl CryptoSuiteBuilder<MockFakeProofable> for FakeCryptoSuite {
-            type ProofOptions = FakeOptions;
-
             fn create_proof(
                 &self,
                 unsecurd_document: MockFakeProofable,
-                opts: Option<FakeOptions>,
+                opts: Proof,
             ) -> Result<Proof, ProofError>;
 
             fn verify_proof(
@@ -203,7 +202,7 @@ mod tests {
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                 mock_crypto_instance
                     .expect_create_proof()
-                    .with(predicate::always(), predicate::eq(Some(FakeOptions {})))
+                    .with(predicate::always(), predicate::always())
                     .returning(|_, _| {
                         Err(ProofError::ProofGenerationError(
                             "unable to create proof".to_string(),
@@ -211,7 +210,7 @@ mod tests {
                     });
 
                 let integrity = Integrity::new(mock_crypto_instance);
-                let try_add_proof = integrity.add_proof(mock_doc, Some(FakeOptions));
+                let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
 
                 assert!(try_add_proof.is_err());
                 assert!(matches!(
@@ -243,14 +242,14 @@ mod tests {
                     let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                     mock_crypto_instance
                         .expect_create_proof()
-                        .with(predicate::always(), predicate::eq(Some(FakeOptions {})))
+                        .with(predicate::always(), predicate::always())
                         .returning(|_, _| {
                             let proof = Proof::default();
                             Ok(proof)
                         });
 
                     let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Some(FakeOptions));
+                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
 
                     assert!(try_add_proof.is_err());
                     assert!(matches!(
@@ -279,7 +278,7 @@ mod tests {
                     let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                     mock_crypto_instance
                         .expect_create_proof()
-                        .with(predicate::always(), predicate::eq(Some(FakeOptions {})))
+                        .with(predicate::always(), predicate::always())
                         .returning(|_, _| {
                             let mut proof = Proof::default();
                             proof.typ("fake-type".to_string());
@@ -288,7 +287,7 @@ mod tests {
                         });
 
                     let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Some(FakeOptions));
+                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
 
                     assert!(try_add_proof.is_err());
                     assert!(matches!(
@@ -317,7 +316,7 @@ mod tests {
                     let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                     mock_crypto_instance
                         .expect_create_proof()
-                        .with(predicate::always(), predicate::eq(Some(FakeOptions {})))
+                        .with(predicate::always(), predicate::always())
                         .returning(|_, _| {
                             let mut proof = Proof::default();
                             proof.typ("fake-type".to_string());
@@ -327,7 +326,7 @@ mod tests {
                         });
 
                     let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Some(FakeOptions));
+                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
 
                     assert!(try_add_proof.is_err());
                     assert!(matches!(
@@ -385,11 +384,11 @@ mod tests {
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                 mock_crypto_instance
                     .expect_create_proof()
-                    .with(predicate::always(), predicate::eq(Some(FakeOptions {})))
+                    .with(predicate::always(), predicate::always())
                     .return_once(|_, _| Ok(proof));
 
                 let integrity = Integrity::new(mock_crypto_instance);
-                let try_add_proof = integrity.add_proof(mock_doc, Some(FakeOptions));
+                let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
 
                 assert!(try_add_proof.is_ok());
                 let proofable = try_add_proof.unwrap();

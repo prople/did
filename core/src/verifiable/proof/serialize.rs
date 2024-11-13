@@ -1,13 +1,13 @@
 use multibase::{self, Base::Base58Btc};
 use rst_common::with_cryptography::hex;
 
-use prople_crypto::types::ByteHex;
 use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::types::ByteHex;
 
 use super::hash::HashedData;
 
-/// ProofByteEncoded is a new type that represent encoded value of [`ProofByte`] 
-/// 
+/// ProofByteEncoded is a new type that represent encoded value of [`ProofByte`]
+///
 /// The string value should be an encoded bytes using Base58-btc format
 #[derive(Clone, Debug)]
 pub(crate) struct ProofByteEncoded(String);
@@ -39,6 +39,7 @@ impl ProofByte {
         ProofByteEncoded::from(encoded)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn to_hex(&self) -> ByteHex {
         let out = hex::encode(self.to_bytes());
         ByteHex::from(out)
@@ -83,7 +84,7 @@ mod tests {
 
         let serialized_bytes = serialized.to_bytes();
         assert_eq!(serialized_bytes.len(), 64);
-        
+
         let public_key = keypair.pub_key();
         let try_verify = public_key.verify(b"hello world", serialized.to_hex());
 

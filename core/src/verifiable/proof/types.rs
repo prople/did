@@ -154,13 +154,7 @@ pub trait CryptoSuiteBuilder<T>: Clone
 where
     T: Proofable,
 {
-    type ProofOptions: Clone + Debug;
-
-    fn create_proof(
-        &self,
-        unsecurd_document: T,
-        opts: Option<Self::ProofOptions>,
-    ) -> Result<Proof, ProofError>;
+    fn create_proof(&self, unsecured_document: T, opts: Proof) -> Result<Proof, ProofError>;
 
     fn verify_proof(
         &self,
