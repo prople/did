@@ -1,10 +1,12 @@
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json;
 
-use crate::types::{DIDError, JSONValue, ToJCS, ToJSON};
+use crate::types::{DIDError, JSONValue, ToJCS, ToJSON, Validator};
 use crate::verifiable::objects::VC;
-use crate::verifiable::proof::Proof;
 use crate::verifiable::types::{Context, Type};
+
+use crate::verifiable::proof::types::{ProofError, Proofable};
+use crate::verifiable::proof::Proof;
 
 /// `VP` a main object used to generate `DID VP`. The `VP` object MUST contains
 /// a [`VC`] object, it may be a single `VC` or multiple
@@ -76,26 +78,6 @@ impl VP {
 
         (vc, self.proof.to_owned())
     }
-
-    fn validate(&self) -> Result<(), DIDError> {
-        if self.contexts.is_empty() {
-            return Err(DIDError::GenerateJSONError(String::from(
-                "vp: empty context",
-            )));
-        }
-
-        if self.types.is_empty() {
-            return Err(DIDError::GenerateJSONError(String::from("vp: empty types")));
-        }
-
-        if self.verifiable_credential.is_empty() {
-            return Err(DIDError::GenerateJSONError(String::from(
-                "vp: empty credentials",
-            )));
-        }
-
-        Ok(())
-    }
 }
 
 impl ToJSON for VP {
@@ -119,6 +101,46 @@ impl ToJCS for VP {
                 .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
+    }
+}
+
+impl Validator for VP {
+    fn validate(&self) -> Result<(), DIDError> {
+        if self.contexts.is_empty() {
+            return Err(DIDError::GenerateJSONError(String::from(
+                "vp: empty context",
+            )));
+        }
+
+        if self.types.is_empty() {
+            return Err(DIDError::GenerateJSONError(String::from("vp: empty types")));
+        }
+
+        if self.verifiable_credential.is_empty() {
+            return Err(DIDError::GenerateJSONError(String::from(
+                "vp: empty credentials",
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+impl Proofable for VP {
+    fn get_proof(&self) -> Option<Proof> {
+        self.proof.to_owned()
+    }
+
+    fn setup_proof(&mut self, proof: Proof) -> &mut Self {
+        self.add_proof(proof);
+        self
+    }
+
+    fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError> {
+        let parsed: Self = serde_json::from_slice(bytes.as_slice())
+            .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
+
+        Ok(parsed)
     }
 }
 

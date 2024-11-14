@@ -7,6 +7,9 @@ use super::types::{
 };
 use super::Proof;
 
+/// `Integrity` is an implementation from a formal spec for the `DataIntegrityProof` algorithm
+///
+/// Formal spec: https://www.w3.org/TR/vc-data-integrity/#algorithms
 #[derive(Clone, Debug)]
 pub struct Integrity<TDoc, TCs>
 where

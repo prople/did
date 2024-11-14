@@ -2,7 +2,9 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::standard::serde_json::{self, Value};
 
 use crate::types::DIDError;
-use crate::types::{JSONValue, ToJCS, ToJSON};
+use crate::types::{JSONValue, ToJCS, ToJSON, Validator};
+
+use crate::verifiable::proof::types::{ProofError, Proofable};
 use crate::verifiable::proof::Proof;
 
 pub type Context = String;
@@ -77,28 +79,6 @@ impl VC {
 
         (vc, self.proof.to_owned())
     }
-
-    fn validate(&self) -> Result<(), DIDError> {
-        if self.contexts.is_empty() {
-            return Err(DIDError::GenerateVCError(String::from(
-                "vc_error: empty context",
-            )));
-        }
-
-        if self.types.is_empty() {
-            return Err(DIDError::GenerateVCError(String::from(
-                "vc_error: empty types",
-            )));
-        }
-
-        if self.credential_subject == Value::Null {
-            return Err(DIDError::GenerateVCError(String::from(
-                "vc_error: credential should not be null",
-            )));
-        }
-
-        Ok(())
-    }
 }
 
 impl ToJSON for VC {
@@ -124,6 +104,48 @@ impl ToJCS for VC {
                 .map_err(|err| DIDError::GenerateJSONError(err.to_string())),
             Err(err) => Err(err),
         }
+    }
+}
+
+impl Validator for VC {
+    fn validate(&self) -> Result<(), DIDError> {
+        if self.contexts.is_empty() {
+            return Err(DIDError::GenerateVCError(String::from(
+                "vc_error: empty context",
+            )));
+        }
+
+        if self.types.is_empty() {
+            return Err(DIDError::GenerateVCError(String::from(
+                "vc_error: empty types",
+            )));
+        }
+
+        if self.credential_subject == Value::Null {
+            return Err(DIDError::GenerateVCError(String::from(
+                "vc_error: credential should not be null",
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+impl Proofable for VC {
+    fn get_proof(&self) -> Option<Proof> {
+        self.proof.to_owned()
+    }
+
+    fn setup_proof(&mut self, proof: Proof) -> &mut Self {
+        self.proof(proof);
+        self
+    }
+
+    fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError> {
+        let parsed: Self = serde_json::from_slice(bytes.as_slice())
+            .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
+
+        Ok(parsed)
     }
 }
 
