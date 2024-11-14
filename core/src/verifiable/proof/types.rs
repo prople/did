@@ -126,11 +126,9 @@ pub trait ProofConfigValidator: ProofOptionsValidator {
 /// This trait also need to inherit behavior from the [`ToJCS`], to make sure that the
 /// implementer object already implement the JCS trait. It means that the implementer object
 /// should be serializable or able to convert it self into JCS format in string
-pub trait Proofable: ToJSON + ToJCS + Validator {
+pub trait Proofable: Clone + ToJSON + ToJCS + Validator {
     fn get_proof(&self) -> Option<Proof>;
-    fn get_proof_purpose(&self) -> ProofPurpose;
-    fn setup_proof(&self, proof: Proof) -> Self;
-    fn split_proof(&self) -> (Self, Option<Proof>);
+    fn setup_proof(&mut self, proof: Proof) -> &mut Self;
     fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
 }
 
@@ -148,6 +146,32 @@ where
 {
     pub verified: bool,
     pub document: Option<T>,
+}
+
+impl<T> CryptoSuiteVerificationResult<T>
+where
+    T: Clone + Debug + Serialize,
+{
+    pub fn result(verified: bool, doc: T) -> Self {
+        match verified {
+            true => CryptoSuiteVerificationResult::verified(doc),
+            false => CryptoSuiteVerificationResult::unverified(),
+        }
+    }
+
+    fn unverified() -> Self {
+        Self {
+            verified: false,
+            document: None,
+        }
+    }
+
+    fn verified(doc: T) -> Self {
+        Self {
+            verified: true,
+            document: Some(doc),
+        }
+    }
 }
 
 pub trait CryptoSuiteBuilder<T>: Clone

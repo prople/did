@@ -43,9 +43,19 @@ where
 
         // Let securedDataDocument be a copy of inputDocument
         // Set securedDataDocument.proof to the value of proof.
-        Ok(doc.clone().setup_proof(proof))
+        let mut secured_doc = doc.clone();
+        secured_doc.setup_proof(proof);
+
+        Ok(secured_doc)
     }
 
+    /// verify_proof designed to follow its formal specification but with a little adjustments
+    ///
+    /// Proof verification will need a custom data structure, but on this function we only needt two, which are
+    /// `document_bytes` and `expected_proof_purpose`, it's because we need to adjust it with our current architecture
+    /// implementation
+    ///
+    /// Formal spec: https://www.w3.org/TR/vc-data-integrity/#verify-proof
     pub fn verify_proof(
         &self,
         document_bytes: Vec<u8>,
@@ -132,9 +142,7 @@ mod tests {
 
         impl Proofable for FakeProofable {
             fn get_proof(&self) -> Option<Proof>;
-            fn get_proof_purpose(&self) -> ProofPurpose;
-            fn setup_proof(&self, proof: Proof) -> Self;
-            fn split_proof(&self) -> (Self, Option<Proof>);
+            fn setup_proof(&mut self, proof: Proof) -> &mut Self;
             fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
         }
     );
@@ -355,11 +363,13 @@ mod tests {
                 let mock_proof_1 = proof.clone();
                 let mock_proof_2 = proof.clone();
                 let mock_proof_3 = proof.clone();
+                let mock_proof_4 = proof.clone();
 
                 let mut mock_doc = MockFakeProofable::new();
                 mock_doc.expect_clone().returning(move || {
                     let copy_proof_1 = mock_proof_1.clone();
                     let copy_proof_2 = mock_proof_2.clone();
+                    let copy_proof_3 = mock_proof_3.clone();
 
                     let mut out = MockFakeProofable::new();
                     out.expect_fmt()
@@ -378,6 +388,9 @@ mod tests {
                             copied
                         });
 
+                    out.expect_get_proof()
+                        .returning(move || Some(copy_proof_3.clone()));
+
                     out
                 });
 
@@ -392,10 +405,11 @@ mod tests {
 
                 assert!(try_add_proof.is_ok());
                 let proofable = try_add_proof.unwrap();
-                assert!(proofable.get_proof().is_some());
+                let proof = proofable.get_proof();
+                assert!(proof.is_some());
 
-                let proof_doc = proofable.get_proof().unwrap();
-                assert_eq!(proof_doc, mock_proof_3)
+                let proof_doc = proof.unwrap();
+                assert_eq!(proof_doc, mock_proof_4)
             }
         }
     }

@@ -15,6 +15,7 @@ pub(crate) mod config;
 pub(crate) mod hash;
 pub(crate) mod serialize;
 pub(crate) mod transform;
+pub(crate) mod verifier;
 
 pub mod eddsa;
 pub mod integrity;
@@ -117,6 +118,11 @@ impl Proof {
 
     pub fn expires(&mut self, expires: String) {
         self.expires = Some(expires)
+    }
+
+    pub fn remove_proof_value(&mut self) -> &mut Self {
+        self.proof_value = "".to_string();
+        self
     }
 }
 

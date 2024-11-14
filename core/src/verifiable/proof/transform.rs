@@ -66,7 +66,7 @@ mod tests {
     use rst_common::standard::serde::{self, Serialize};
 
     use crate::types::{DIDError, JSONValue, ToJCS, ToJSON, Validator};
-    use crate::verifiable::proof::types::{ProofPurpose, Proofable};
+    use crate::verifiable::proof::types::Proofable;
     use crate::verifiable::proof::Proof;
 
     #[derive(Serialize, Deserialize)]
@@ -148,9 +148,7 @@ mod tests {
 
         impl Proofable for FakeProofable {
             fn get_proof(&self) -> Option<Proof>;
-            fn get_proof_purpose(&self) -> ProofPurpose;
-            fn setup_proof(&self, proof: Proof) -> Self;
-            fn split_proof(&self) -> (Self, Option<Proof>);
+            fn setup_proof(&mut self, proof: Proof) -> &mut Self;
             fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
         }
     );
