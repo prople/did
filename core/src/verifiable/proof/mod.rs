@@ -125,17 +125,15 @@ impl Proof {
 
 /// The implementation of [`Validator`] here is to follow formal specification for the `Add Proof`
 ///
+/// There is a little adjustment on the algorithm, we're not validate the verification method. The verification
+/// method used to get the private key's bytes, in Prople, the keypair will be given directly, so there
+/// is a difference between the designed architecture with the formal specification.
+/// 
 /// Spec: https://www.w3.org/TR/vc-data-integrity/#add-proof
 impl Validator for Proof {
     fn validate(&self) -> Result<(), DIDError> {
         if self.typ.is_empty() {
             return Err(DIDError::ValidateError("missing type".to_string()));
-        }
-
-        if self.verification_method.is_empty() {
-            return Err(DIDError::ValidateError(
-                "missing verification method".to_string(),
-            ));
         }
 
         match self.proof_purpose {

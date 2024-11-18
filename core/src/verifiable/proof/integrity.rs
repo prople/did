@@ -276,44 +276,6 @@ mod tests {
                 }
 
                 #[test]
-                fn test_validation_error_missing_verification_method() {
-                    let mut mock_doc = MockFakeProofable::new();
-                    mock_doc.expect_clone().returning(|| {
-                        let mut out = MockFakeProofable::new();
-                        out.expect_fmt()
-                            .returning(|formatter| formatter.write_str("test"));
-
-                        out
-                    });
-
-                    let mut mock_crypto_instance = MockFakeCryptoSuite::new();
-                    mock_crypto_instance
-                        .expect_create_proof()
-                        .with(predicate::always(), predicate::always())
-                        .returning(|_, _| {
-                            let mut proof = Proof::default();
-                            proof.typ("fake-type".to_string());
-
-                            Ok(proof)
-                        });
-
-                    let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
-
-                    assert!(try_add_proof.is_err());
-                    assert!(matches!(
-                        try_add_proof.clone().unwrap_err(),
-                        ProofError::ProofGenerationError(_)
-                    ));
-
-                    let err_msg = match try_add_proof.unwrap_err() {
-                        ProofError::ProofGenerationError(msg) => msg,
-                        _ => panic!("unknown error"),
-                    };
-                    assert!(err_msg.contains("missing verification method"))
-                }
-
-                #[test]
                 fn test_validation_error_unknown_purpose() {
                     let mut mock_doc = MockFakeProofable::new();
                     mock_doc.expect_clone().returning(|| {
@@ -475,56 +437,6 @@ mod tests {
                         _ => panic!("unknown error type"),
                     };
                     assert!(err_msg.contains("missing type"))
-                }
-
-                #[test]
-                fn test_missing_method() {
-                    let _l = LOCKER.lock();
-
-                    let mut proof = Proof::default();
-                    proof.typ("fake type".to_string());
-
-                    let fake_proof_1 = proof.clone();
-
-                    let mut mock_doc = MockFakeProofable::new();
-                    mock_doc.expect_clone().returning(move || {
-                        let fake_proof_1 = fake_proof_1.clone();
-
-                        let mut out = MockFakeProofable::new();
-                        out.expect_fmt()
-                            .returning(|formatter| formatter.write_str("test"));
-
-                        out.expect_get_proof()
-                            .return_once(move || Some(fake_proof_1));
-                        out
-                    });
-
-                    mock_doc
-                        .expect_to_json()
-                        .returning(|| Ok(JSONValue::from("hello world")));
-
-                    let mock_doc_1 = mock_doc.clone();
-
-                    let ctx = MockFakeProofable::parse_json_bytes_context();
-                    ctx.expect().once().return_once(move |_| Ok(mock_doc_1));
-
-                    let mock_crypto_instance = MockFakeCryptoSuite::new();
-                    let integrity = Integrity::new(mock_crypto_instance);
-                    let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
-
-                    let try_verify =
-                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
-                    assert!(try_verify.is_err());
-                    assert!(matches!(
-                        try_verify.clone().unwrap_err(),
-                        ProofError::ProofVerificationError(_)
-                    ));
-
-                    let err_msg = match try_verify.unwrap_err() {
-                        ProofError::ProofVerificationError(msg) => msg,
-                        _ => panic!("unknown error type"),
-                    };
-                    assert!(err_msg.contains("missing verification method"))
                 }
 
                 #[test]
