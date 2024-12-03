@@ -1,16 +1,15 @@
-use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::pubkey::PubKey;
 
 use super::hash::HashedData;
 use super::serialize::ProofByte;
 use super::types::ProofError;
 
 pub(crate) fn verify_signature(
-    keypair: KeyPair,
+    pubkey: PubKey,
     hashed: HashedData,
     signature: ProofByte,
 ) -> Result<bool, ProofError> {
-    let verified = keypair
-        .pub_key()
+    let verified = pubkey
         .verify(hashed.to_bytes(), signature.to_hex())
         .map_err(|err| ProofError::ProofVerificationError(err.to_string()))?;
 
@@ -21,6 +20,7 @@ pub(crate) fn verify_signature(
 mod tests {
     use super::*;
     use crate::verifiable::proof::serialize::{serialize_hashed_data, ProofByte};
+    use prople_crypto::eddsa::keypair::KeyPair;
 
     mod expect_errors {
         use super::*;

@@ -5,8 +5,6 @@ use serde_jcs;
 use rst_common::standard::chrono::{DateTime, Utc};
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 
-use prople_crypto::eddsa::keypair::KeyPair;
-
 use crate::types::{DIDError, ToJCS, Validator};
 
 pub(crate) mod config;
@@ -128,7 +126,7 @@ impl Proof {
 /// There is a little adjustment on the algorithm, we're not validate the verification method. The verification
 /// method used to get the private key's bytes, in Prople, the keypair will be given directly, so there
 /// is a difference between the designed architecture with the formal specification.
-/// 
+///
 /// Spec: https://www.w3.org/TR/vc-data-integrity/#add-proof
 impl Validator for Proof {
     fn validate(&self) -> Result<(), DIDError> {
@@ -209,7 +207,6 @@ pub struct DataIntegrityEddsaJcs2022<TDoc>
 where
     TDoc: Proofable,
 {
-    keypair: KeyPair,
     _phantom: PhantomData<TDoc>,
 }
 
@@ -217,15 +214,14 @@ impl<TDoc> DataIntegrityEddsaJcs2022<TDoc>
 where
     TDoc: Proofable,
 {
-    pub fn new(keypair: KeyPair) -> Self {
+    pub fn new() -> Self {
         Self {
-            keypair,
             _phantom: PhantomData,
         }
     }
 
     pub fn build(&self) -> Integrity<TDoc, EddsaJcs2022> {
-        let eddsa_crypto_instance = EddsaJcs2022::new(self.keypair.to_owned());
+        let eddsa_crypto_instance = EddsaJcs2022::new();
         let integrity = Integrity::<TDoc, _>::new(eddsa_crypto_instance);
         integrity
     }

@@ -1,5 +1,8 @@
 use std::fmt::Debug;
 
+use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::pubkey::PubKey;
+
 use rst_common::standard::serde::{self, Deserialize, Serialize};
 use rst_common::with_errors::thiserror::{self, Error};
 
@@ -178,10 +181,16 @@ pub trait CryptoSuiteBuilder<T>: Clone
 where
     T: Proofable,
 {
-    fn create_proof(&self, unsecured_document: T, opts: Proof) -> Result<Proof, ProofError>;
+    fn create_proof(
+        &self,
+        keypair: KeyPair,
+        unsecured_document: T,
+        opts: Proof,
+    ) -> Result<Proof, ProofError>;
 
     fn verify_proof(
         &self,
+        pubkey: PubKey,
         secured_document: T,
     ) -> Result<CryptoSuiteVerificationResult<T>, ProofError>;
 }

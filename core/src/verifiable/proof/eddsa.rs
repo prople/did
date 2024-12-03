@@ -1,5 +1,7 @@
 use multibase;
+
 use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::pubkey::PubKey;
 
 use super::types::{CryptoSuiteBuilder, CryptoSuiteVerificationResult, ProofError, Proofable};
 use super::Proof;
@@ -13,13 +15,11 @@ use super::verifier::verify_signature;
 /// EddsaJcs2022 is an implementation of [`CryptoSuiteBuilder`] trait abstraction, that focus only for the
 /// cryptosuite type of `eddsa-jcs-2022`
 #[derive(Clone, Debug)]
-pub struct EddsaJcs2022 {
-    keypair: KeyPair,
-}
+pub struct EddsaJcs2022;
 
 impl EddsaJcs2022 {
-    pub fn new(keypair: KeyPair) -> Self {
-        Self { keypair }
+    pub fn new() -> Self {
+        EddsaJcs2022 {}
     }
 }
 
@@ -28,7 +28,12 @@ where
     T: Proofable,
 {
     /// Formal spec: https://www.w3.org/TR/vc-di-eddsa/#create-proof-eddsa-jcs-2022
-    fn create_proof(&self, unsecured_document: T, opts: Proof) -> Result<Proof, ProofError> {
+    fn create_proof(
+        &self,
+        keypair: KeyPair,
+        unsecured_document: T,
+        opts: Proof,
+    ) -> Result<Proof, ProofError> {
         // Let proof be a clone of the proof options, options
         let mut cloned_proof = opts.clone();
 
@@ -46,7 +51,7 @@ where
 
         // Let proofBytes be the result of running the algorithm in Section 3.3.6 Proof Serialization (eddsa-jcs-2022)
         // with hashData and options passed as parameters
-        let proof_bytes = serialize_hashed_data(hashed_data, self.keypair.to_owned());
+        let proof_bytes = serialize_hashed_data(hashed_data, keypair);
 
         // Let proof.proofValue be a base58-btc-encoded Multibase value of the proofBytes
         let proof_encoded = proof_bytes.encode();
@@ -59,6 +64,7 @@ where
     /// Formal spec: https://www.w3.org/TR/vc-di-eddsa/#verify-proof-eddsa-jcs-2022
     fn verify_proof(
         &self,
+        pubkey: PubKey,
         secured_document: T,
     ) -> Result<CryptoSuiteVerificationResult<T>, ProofError> {
         // Let unsecuredDocument be a copy of securedDocument with the proof value removed
@@ -92,11 +98,7 @@ where
 
         // Let verified be the result of running the algorithm in Section 3.3.7 Proof Verification (eddsa-jcs-2022)
         // on hashData, proofBytes, and proofConfig
-        let is_verified = verify_signature(
-            self.keypair.to_owned(),
-            hashed_data,
-            ProofByte::from(proof_bytes),
-        )?;
+        let is_verified = verify_signature(pubkey, hashed_data, ProofByte::from(proof_bytes))?;
 
         // Return a verification result
         let result = CryptoSuiteVerificationResult::result(is_verified, unsecured_doc);
@@ -188,8 +190,8 @@ mod tests {
                 let mock_doc = MockFakeProofable::new();
                 let keypair = KeyPair::generate();
 
-                let eddsa_di = EddsaJcs2022::new(keypair);
-                let try_create_proof = eddsa_di.create_proof(mock_doc, proof);
+                let eddsa_di = EddsaJcs2022::new();
+                let try_create_proof = eddsa_di.create_proof(keypair, mock_doc, proof);
 
                 assert!(try_create_proof.is_err());
                 assert!(matches!(
@@ -220,8 +222,8 @@ mod tests {
                     .once()
                     .returning(|| Err(DIDError::GenerateJSONJCSError("error jcs".to_string())));
 
-                let eddsa_di = EddsaJcs2022::new(keypair);
-                let try_create_proof = eddsa_di.create_proof(mock_doc, proof);
+                let eddsa_di = EddsaJcs2022::new();
+                let try_create_proof = eddsa_di.create_proof(keypair, mock_doc, proof);
 
                 assert!(try_create_proof.is_err());
                 assert!(matches!(
@@ -266,8 +268,9 @@ mod tests {
 
                 let keypair = KeyPair::generate();
 
-                let eddsa_di = EddsaJcs2022::new(keypair.clone());
-                let try_create_proof = eddsa_di.create_proof(mock_doc.clone(), proof.clone());
+                let eddsa_di = EddsaJcs2022::new();
+                let try_create_proof =
+                    eddsa_di.create_proof(keypair.clone(), mock_doc.clone(), proof.clone());
 
                 assert!(try_create_proof.is_ok());
 
@@ -311,7 +314,9 @@ mod tests {
                 // now, we need to test through decoded base64 and use verify_signature
                 // the expectation should be same between through this function or manually check
                 let (_, proof_byte) = try_decode.unwrap();
-                let try_verify_2 = verify_signature(keypair, hashed, ProofByte::from(proof_byte));
+                let try_verify_2 =
+                    verify_signature(public_key, hashed, ProofByte::from(proof_byte));
+
                 assert!(try_verify_2.is_ok());
                 assert!(try_verify_2.unwrap())
             }
@@ -346,8 +351,10 @@ mod tests {
                     .returning(|| Ok("fake-jcs".to_string()));
 
                 let keypair = KeyPair::generate();
-                let eddsa_di = EddsaJcs2022::new(keypair);
-                let try_create_proof = eddsa_di.create_proof(mock_doc.clone(), proof);
+                let pubkey = keypair.pub_key();
+
+                let eddsa_di = EddsaJcs2022::new();
+                let try_create_proof = eddsa_di.create_proof(keypair, mock_doc.clone(), proof);
                 assert!(try_create_proof.is_ok());
 
                 let mut secured_doc = mock_doc.clone();
@@ -379,7 +386,7 @@ mod tests {
                     .expect_to_jcs()
                     .returning(|| Ok("fake-jcs".to_string()));
 
-                let try_verify_proof = eddsa_di.verify_proof(secured_doc);
+                let try_verify_proof = eddsa_di.verify_proof(pubkey, secured_doc);
                 assert!(try_verify_proof.is_ok());
 
                 // although the process return without any errors, we also need to make sure that

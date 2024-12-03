@@ -1,5 +1,8 @@
 use std::marker::PhantomData;
 
+use prople_crypto::eddsa::keypair::KeyPair;
+use prople_crypto::eddsa::pubkey::PubKey;
+
 use crate::types::Validator;
 
 use super::types::{
@@ -38,8 +41,10 @@ where
     /// because it already been set on [`Integrity::new`] method
     ///
     /// Spec: https://www.w3.org/TR/vc-data-integrity/#add-proof
-    pub fn add_proof(&self, doc: TDoc, opts: Proof) -> Result<TDoc, ProofError> {
-        let proof = self.cryptosuite_instance.create_proof(doc.clone(), opts)?;
+    pub fn add_proof(&self, keypair: KeyPair, doc: TDoc, opts: Proof) -> Result<TDoc, ProofError> {
+        let proof = self
+            .cryptosuite_instance
+            .create_proof(keypair, doc.clone(), opts)?;
         let _ = proof
             .validate()
             .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
@@ -61,6 +66,7 @@ where
     /// Formal spec: https://www.w3.org/TR/vc-data-integrity/#verify-proof
     pub fn verify_proof(
         &self,
+        pubkey: PubKey,
         document_bytes: Vec<u8>,
         expected_proof_purpose: ProofPurpose,
     ) -> Result<CryptoSuiteVerificationResult<TDoc>, ProofError> {
@@ -92,7 +98,7 @@ where
 
         // Let cryptosuiteVerificationResult be the result of running the cryptosuite.verifyProof algorithm
         // with securedDocument provided as input
-        self.cryptosuite_instance.verify_proof(secured_doc)
+        self.cryptosuite_instance.verify_proof(pubkey, secured_doc)
     }
 }
 
@@ -169,9 +175,6 @@ mod tests {
         }
     }
 
-    #[derive(Clone, Debug, PartialEq)]
-    struct FakeOptions;
-
     mock!(
         FakeCryptoSuite{}
 
@@ -182,12 +185,14 @@ mod tests {
         impl CryptoSuiteBuilder<MockFakeProofable> for FakeCryptoSuite {
             fn create_proof(
                 &self,
+                keypair: KeyPair,
                 unsecurd_document: MockFakeProofable,
                 opts: Proof,
             ) -> Result<Proof, ProofError>;
 
             fn verify_proof(
                 &self,
+                pubkey: PubKey,
                 secured_document: MockFakeProofable,
             ) -> Result<CryptoSuiteVerificationResult<MockFakeProofable>, ProofError>;
         }
@@ -213,15 +218,20 @@ mod tests {
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                 mock_crypto_instance
                     .expect_create_proof()
-                    .with(predicate::always(), predicate::always())
-                    .returning(|_, _| {
+                    .with(
+                        predicate::always(),
+                        predicate::always(),
+                        predicate::always(),
+                    )
+                    .returning(|_, _, _| {
                         Err(ProofError::ProofGenerationError(
                             "unable to create proof".to_string(),
                         ))
                     });
 
+                let keypair = KeyPair::generate();
                 let integrity = Integrity::new(mock_crypto_instance);
-                let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
+                let try_add_proof = integrity.add_proof(keypair, mock_doc, Proof::default());
 
                 assert!(try_add_proof.is_err());
                 assert!(matches!(
@@ -253,14 +263,19 @@ mod tests {
                     let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                     mock_crypto_instance
                         .expect_create_proof()
-                        .with(predicate::always(), predicate::always())
-                        .returning(|_, _| {
+                        .with(
+                            predicate::always(),
+                            predicate::always(),
+                            predicate::always(),
+                        )
+                        .returning(|_, _, _| {
                             let proof = Proof::default();
                             Ok(proof)
                         });
 
+                    let keypair = KeyPair::generate();
                     let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
+                    let try_add_proof = integrity.add_proof(keypair, mock_doc, Proof::default());
 
                     assert!(try_add_proof.is_err());
                     assert!(matches!(
@@ -289,8 +304,12 @@ mod tests {
                     let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                     mock_crypto_instance
                         .expect_create_proof()
-                        .with(predicate::always(), predicate::always())
-                        .returning(|_, _| {
+                        .with(
+                            predicate::always(),
+                            predicate::always(),
+                            predicate::always(),
+                        )
+                        .returning(|_, _, _| {
                             let mut proof = Proof::default();
                             proof.typ("fake-type".to_string());
                             proof.method("fake-verification-method".to_string());
@@ -298,8 +317,9 @@ mod tests {
                             Ok(proof)
                         });
 
+                    let keypair = KeyPair::generate();
                     let integrity = Integrity::new(mock_crypto_instance);
-                    let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
+                    let try_add_proof = integrity.add_proof(keypair, mock_doc, Proof::default());
 
                     assert!(try_add_proof.is_err());
                     assert!(matches!(
@@ -362,11 +382,16 @@ mod tests {
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                 mock_crypto_instance
                     .expect_create_proof()
-                    .with(predicate::always(), predicate::always())
-                    .return_once(|_, _| Ok(proof));
+                    .with(
+                        predicate::always(),
+                        predicate::always(),
+                        predicate::always(),
+                    )
+                    .return_once(|_, _, _| Ok(proof));
 
+                let keypair = KeyPair::generate();
                 let integrity = Integrity::new(mock_crypto_instance);
-                let try_add_proof = integrity.add_proof(mock_doc, Proof::default());
+                let try_add_proof = integrity.add_proof(keypair, mock_doc, Proof::default());
 
                 assert!(try_add_proof.is_ok());
                 let proofable = try_add_proof.unwrap();
@@ -424,8 +449,13 @@ mod tests {
                     let integrity = Integrity::new(mock_crypto_instance);
                     let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                    let try_verify =
-                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                    let keypair = KeyPair::generate();
+                    let try_verify = integrity.verify_proof(
+                        keypair.pub_key(),
+                        mock_bytes,
+                        ProofPurpose::AssertionMethod,
+                    );
+
                     assert!(try_verify.is_err());
                     assert!(matches!(
                         try_verify.clone().unwrap_err(),
@@ -475,8 +505,13 @@ mod tests {
                     let integrity = Integrity::new(mock_crypto_instance);
                     let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                    let try_verify =
-                        integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                    let keypair = KeyPair::generate();
+                    let try_verify = integrity.verify_proof(
+                        keypair.pub_key(),
+                        mock_bytes,
+                        ProofPurpose::AssertionMethod,
+                    );
+
                     assert!(try_verify.is_err());
                     assert!(matches!(
                         try_verify.clone().unwrap_err(),
@@ -519,7 +554,12 @@ mod tests {
                 let integrity = Integrity::new(mock_crypto_instance);
                 let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                let keypair = KeyPair::generate();
+                let try_verify = integrity.verify_proof(
+                    keypair.pub_key(),
+                    mock_bytes,
+                    ProofPurpose::AssertionMethod,
+                );
                 assert!(try_verify.is_err());
                 assert!(matches!(
                     try_verify.clone().unwrap_err(),
@@ -560,7 +600,12 @@ mod tests {
                 let integrity = Integrity::new(mock_crypto_instance);
                 let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                let keypair = KeyPair::generate();
+                let try_verify = integrity.verify_proof(
+                    keypair.pub_key(),
+                    mock_bytes,
+                    ProofPurpose::AssertionMethod,
+                );
                 assert!(try_verify.is_err());
                 assert!(matches!(
                     try_verify.clone().unwrap_err(),
@@ -610,7 +655,12 @@ mod tests {
                 let integrity = Integrity::new(mock_crypto_instance);
                 let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                let keypair = KeyPair::generate();
+                let try_verify = integrity.verify_proof(
+                    keypair.pub_key(),
+                    mock_bytes,
+                    ProofPurpose::AssertionMethod,
+                );
                 assert!(try_verify.is_err());
                 assert!(matches!(
                     try_verify.clone().unwrap_err(),
@@ -668,12 +718,17 @@ mod tests {
                 let mut mock_crypto_instance = MockFakeCryptoSuite::new();
                 mock_crypto_instance
                     .expect_verify_proof()
-                    .return_once(move |_| Ok(verification_result));
+                    .return_once(move |_, _| Ok(verification_result));
 
                 let integrity = Integrity::new(mock_crypto_instance);
                 let mock_bytes = mock_doc.to_json().unwrap().to_bytes();
 
-                let try_verify = integrity.verify_proof(mock_bytes, ProofPurpose::AssertionMethod);
+                let keypair = KeyPair::generate();
+                let try_verify = integrity.verify_proof(
+                    keypair.pub_key(),
+                    mock_bytes,
+                    ProofPurpose::AssertionMethod,
+                );
                 assert!(try_verify.is_ok());
 
                 let verify_result = try_verify.unwrap();

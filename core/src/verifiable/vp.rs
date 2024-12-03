@@ -66,18 +66,6 @@ impl VP {
         self.holder = Some(holder);
         self
     }
-
-    pub fn split_proof(&self) -> (Self, Option<Proof>) {
-        let vc = Self {
-            contexts: self.contexts.to_owned(),
-            holder: self.holder.to_owned(),
-            types: self.types.to_owned(),
-            verifiable_credential: self.verifiable_credential.to_owned(),
-            proof: None,
-        };
-
-        (vc, self.proof.to_owned())
-    }
 }
 
 impl ToJSON for VP {
