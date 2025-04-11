@@ -130,6 +130,12 @@ impl Proofable for VP {
 
         Ok(parsed)
     }
+
+    fn remove_proof(&self) -> Self {
+        let mut vp = self.clone();
+        vp.proof = None;
+        vp
+    }
 }
 
 #[cfg(test)]

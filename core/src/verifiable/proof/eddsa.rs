@@ -48,7 +48,7 @@ where
         // Let hashData be the result of running the algorithm in Section 3.3.4 Hashing (eddsa-jcs-2022) with
         // transformedData and proofConfig passed as a parameters
         let hashed_data = generate_hash(transformed_data, proof_config)?;
-
+        
         // Let proofBytes be the result of running the algorithm in Section 3.3.6 Proof Serialization (eddsa-jcs-2022)
         // with hashData and options passed as parameters
         let proof_bytes = serialize_hashed_data(hashed_data, keypair);
@@ -68,7 +68,7 @@ where
         secured_document: T,
     ) -> Result<CryptoSuiteVerificationResult<T>, ProofError> {
         // Let unsecuredDocument be a copy of securedDocument with the proof value removed
-        let unsecured_doc = secured_document.clone();
+        let unsecured_doc = secured_document.clone().remove_proof();
         let proof_doc = secured_document
             .get_proof()
             .ok_or(ProofError::ProofVerificationError(
@@ -95,7 +95,7 @@ where
         // Let hashData be the result of running the algorithm in Section 3.3.4 Hashing (eddsa-jcs-2022)
         // with transformedData and proofConfig passed as a parameters
         let hashed_data = generate_hash(transformed_data, proof_config)?;
-
+        
         // Let verified be the result of running the algorithm in Section 3.3.7 Proof Verification (eddsa-jcs-2022)
         // on hashData, proofBytes, and proofConfig
         let is_verified = verify_signature(pubkey, hashed_data, ProofByte::from(proof_bytes))?;
@@ -156,6 +156,7 @@ mod tests {
             fn get_proof(&self) -> Option<Proof>;
             fn setup_proof(&mut self, proof: Proof) -> &mut Self;
             fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
+            fn remove_proof(&self) -> Self;
         }
     );
 
@@ -327,72 +328,36 @@ mod tests {
         use super::*;
 
         mod expect_success {
+            use rst_common::standard::serde_json::Value;
+
             use super::*;
+            use crate::verifiable::vc::VC;
 
             #[test]
-            fn test_verify_success() {
+            fn test_verify_vc_success() {
                 let mut proof = Proof::default();
                 proof.typ(DEFAULT_PROOF_TYPE.to_string());
                 proof.cryptosuite(DEFAULT_PROOF_CRYPTOSUITE.to_string());
                 proof.created(Utc::now().to_string());
 
-                let mut mock_doc = MockFakeProofable::new();
-                mock_doc.expect_clone().returning(|| {
-                    let mut cloned = MockFakeProofable::new();
-                    cloned
-                        .expect_to_jcs()
-                        .returning(|| Ok("fake-jcs".to_string()));
-
-                    cloned
-                });
-
-                mock_doc
-                    .expect_to_jcs()
-                    .returning(|| Ok("fake-jcs".to_string()));
+                let mut vc = VC::new("id".to_string(), "issuer".to_string());
+                vc.add_context("context".to_string());
+                vc.add_type("type".to_string());
+                vc.set_credential(Value::String("credential".to_string()));
 
                 let keypair = KeyPair::generate();
                 let pubkey = keypair.pub_key();
 
                 let eddsa_di = EddsaJcs2022::new();
-                let try_create_proof = eddsa_di.create_proof(keypair, mock_doc.clone(), proof);
+                let try_create_proof = eddsa_di.create_proof(keypair, vc.clone(), proof);
                 assert!(try_create_proof.is_ok());
 
-                let mut secured_doc = mock_doc.clone();
-                secured_doc.expect_clone().returning(move || {
-                    let mut cloned = MockFakeProofable::new();
-                    cloned
-                        .expect_to_jcs()
-                        .returning(|| Ok("fake-jcs".to_string()));
-
-                    cloned.expect_clone().returning(|| {
-                        let mut cloned = MockFakeProofable::new();
-                        cloned
-                            .expect_to_jcs()
-                            .returning(|| Ok("fake-jcs".to_string()));
-
-                        cloned
-                    });
-
-                    cloned
-                });
-
-                let generated_proof = try_create_proof.unwrap();
-                secured_doc.expect_get_proof().once().returning(move || {
-                    let cloned_generated_proof = generated_proof.clone();
-                    Some(cloned_generated_proof)
-                });
-
-                secured_doc
-                    .expect_to_jcs()
-                    .returning(|| Ok("fake-jcs".to_string()));
+                let mut secured_doc = vc.clone();
+                secured_doc.setup_proof(try_create_proof.unwrap());
 
                 let try_verify_proof = eddsa_di.verify_proof(pubkey, secured_doc);
                 assert!(try_verify_proof.is_ok());
-
-                // although the process return without any errors, we also need to make sure that
-                // the cryptosuite verification result also at the verified state (boolean -> true)
-                let result = try_verify_proof.unwrap();
-                assert!(result.verified)
+                assert!(try_verify_proof.unwrap().verified)
             }
         }
     }

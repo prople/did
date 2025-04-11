@@ -134,6 +134,12 @@ impl Proofable for VC {
 
         Ok(parsed)
     }
+
+    fn remove_proof(&self) -> Self {
+        let mut vc = self.clone();
+        vc.proof = None;
+        vc
+    }
 }
 
 #[cfg(test)]

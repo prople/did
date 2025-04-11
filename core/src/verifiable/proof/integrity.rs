@@ -153,6 +153,7 @@ mod tests {
             fn get_proof(&self) -> Option<Proof>;
             fn setup_proof(&mut self, proof: Proof) -> &mut Self;
             fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
+            fn remove_proof(&self) -> Self;
         }
     );
 

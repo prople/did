@@ -131,6 +131,7 @@ pub trait ProofConfigValidator: ProofOptionsValidator {
 /// should be serializable or able to convert it self into JCS format in string
 pub trait Proofable: Clone + ToJSON + ToJCS + Validator {
     fn get_proof(&self) -> Option<Proof>;
+    fn remove_proof(&self) -> Self;
     fn setup_proof(&mut self, proof: Proof) -> &mut Self;
     fn parse_json_bytes(bytes: Vec<u8>) -> Result<Self, ProofError>;
 }
