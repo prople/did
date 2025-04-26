@@ -29,7 +29,6 @@ pub const DEFAULT_PROOF_TYPE: &str = "DataIntegrityProof";
 /// Spec: https://www.w3.org/TR/vc-data-integrity/#proof-purposes
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(crate = "self::serde")]
-#[serde(untagged)]
 pub enum ProofPurpose {
     #[serde(rename = "assertionMethod")]
     AssertionMethod,

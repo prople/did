@@ -45,6 +45,13 @@ pub struct Proof {
     #[serde(rename = "proofValue")]
     pub proof_value: String,
 
+    /// Following the formal specification, the "verification method"
+    /// must be a string map to some URL
+    ///
+    /// Note, that when it is expressed, it's value points to the actual 
+    /// location of the data; the location of the public key
+    ///  
+    /// Ref: https://www.w3.org/TR/vc-data-integrity/#proofs
     #[serde(rename = "verificationMethod")]
     pub verification_method: String,
 
@@ -224,5 +231,24 @@ where
         let eddsa_crypto_instance = EddsaJcs2022::new();
         let integrity = Integrity::<TDoc, _>::new(eddsa_crypto_instance);
         integrity
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rst_common::standard::serde_json;
+
+    #[test]
+    fn test_proof_default() {
+        let mut proof = Proof::default();
+        proof.proof_purpose = ProofPurpose::AssertionMethod;
+        proof.verification_method = "testing".to_string();
+
+        let json = serde_json::to_string(&proof).unwrap();
+        let from_json = serde_json::from_str::<Proof>(&json).unwrap();
+        
+        assert_eq!(from_json.proof_purpose, proof.proof_purpose);
+        assert_eq!(from_json.verification_method, proof.verification_method);
     }
 }
