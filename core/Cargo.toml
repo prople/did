@@ -17,10 +17,10 @@ readme = "README.md"
 
 [dependencies]
 rst-common = {version = "~1.5", features = ["standard", "with-errors", "with-tokio", "with-logging", "with-cryptography"]}
-serde_jcs = {version ="0.1"}
-multibase = {version = "0.9"} 
-multihash = {version = "0.19.1"} 
-multiaddr = {version = "0.18.1"} 
+serde_jcs = {version ="~0.1"}
+multibase = {version = "~0.9"} 
+multihash = {version = "~0.19"} 
+multiaddr = {version = "~0.18"}
 prople-crypto = {version = "~0.3"}
 
 [dev-dependencies]

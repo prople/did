@@ -4,6 +4,9 @@ members = [
     "core",
 ]
 
+[workspace.dependencies]
+husky-rs = {version = "~0.1"} 
+
 [workspace.package]
 authors = ["rstlix0x0 <rstlix.dev@gmail.com>"]
 rust-version = "1.75"

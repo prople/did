@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use rst_common::with_cryptography::sha2::{Digest, Sha256};
 
 use super::types::{Hasher, ProofConfigValidator, ProofError};
@@ -16,9 +18,9 @@ impl From<String> for ProofConfig {
     }
 }
 
-impl ToString for ProofConfig {
-    fn to_string(&self) -> String {
-        self.0.to_owned()
+impl Display for ProofConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -46,9 +48,9 @@ where
 
     // If proofConfig.type is not set to DataIntegrityProof or proofConfig.cryptosuite is not set to eddsa-jcs-2022,
     // an error MUST be raised that SHOULD convey an error type of PROOF_GENERATION_ERROR
-    let _ = proof_config.validate_type()?;
-    let _ = proof_config.validate_cryptosuite()?;
-    let _ = proof_config.validate_created()?;
+    proof_config.validate_type()?;
+    proof_config.validate_cryptosuite()?;
+    proof_config.validate_created()?;
 
     // Let canonicalProofConfig be the result of applying the JSON Canonicalization Scheme [RFC8785] to the proofConfig
     let canonical_proof_config = proof_config

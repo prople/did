@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use prople_crypto::eddsa::keypair::KeyPair;
 use prople_crypto::eddsa::pubkey::PubKey;
@@ -49,15 +49,15 @@ pub enum ProofPurpose {
     Unknown,
 }
 
-impl ToString for ProofPurpose {
-    fn to_string(&self) -> String {
+impl Display for ProofPurpose {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::AssertionMethod => "assertionMethod".to_string(),
-            Self::Authentication => "authentication".to_string(),
-            Self::KeyAgreement => "keyAgreement".to_string(),
-            Self::CapabilityDelegation => "capabilityDelegation".to_string(),
-            Self::CapabilityInvocation => "capabilityInvocation".to_string(),
-            Self::Unknown => "unknown".to_string(),
+            Self::AssertionMethod => write!(f, "assertionMethod"),
+            Self::Authentication => write!(f, "authentication"),
+            Self::KeyAgreement => write!(f, "keyAgreement"),
+            Self::CapabilityDelegation => write!(f, "capabilityDelegation"),
+            Self::CapabilityInvocation => write!(f, "capabilityInvocation"),
+            Self::Unknown => write!(f, "unknown"),
         }
     }
 }

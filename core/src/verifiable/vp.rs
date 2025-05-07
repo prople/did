@@ -31,6 +31,12 @@ pub struct VP {
     pub holder: Option<String>,
 }
 
+impl Default for VP {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VP {
     pub fn new() -> Self {
         Self {

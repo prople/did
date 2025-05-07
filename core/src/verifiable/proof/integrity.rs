@@ -45,7 +45,7 @@ where
         let proof = self
             .cryptosuite_instance
             .create_proof(keypair, doc.clone(), opts)?;
-        let _ = proof
+        proof
             .validate()
             .map_err(|err| ProofError::ProofGenerationError(err.to_string()))?;
 
@@ -84,7 +84,7 @@ where
 
         // If one or more of proof.type, proof.verificationMethod, and proof.proofPurpose does not exist,
         // an error MUST be raised and SHOULD convey an error type of PROOF_VERIFICATION_ERROR
-        let _ = proof_doc
+        proof_doc
             .validate()
             .map_err(|err| ProofError::ProofVerificationError(err.to_string()))?;
 

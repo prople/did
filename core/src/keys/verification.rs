@@ -36,7 +36,7 @@ impl Pairs {
 
     pub fn decode_pub_key(&self) -> Result<PubKey, Error> {
         let (_, pubkey_bytes) =
-            multibase::decode(self.pub_key.to_owned()).map_err(|_| Error::DecodePublicKeyError)?;
+            multibase::decode(&self.pub_key).map_err(|_| Error::DecodePublicKeyError)?;
         let pubkey_string =
             String::from_utf8(pubkey_bytes).map_err(|_| Error::DecodePublicKeyError)?;
         let pubkey = PubKey::from_hex(ByteHex::from(pubkey_string))
@@ -57,6 +57,12 @@ impl KeySecureBuilder for Pairs {
 /// `Key` used to hold a key pair from [`Ed25519::KeyPair`]
 pub struct Key {
     keypair: KeyPair,
+}
+
+impl Default for Key {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Key {

@@ -17,6 +17,12 @@ use super::verifier::verify_signature;
 #[derive(Clone, Debug)]
 pub struct EddsaJcs2022;
 
+impl Default for EddsaJcs2022 {
+    fn default() -> Self {
+        EddsaJcs2022::new()
+    }
+}
+
 impl EddsaJcs2022 {
     pub fn new() -> Self {
         EddsaJcs2022 {}
@@ -48,7 +54,7 @@ where
         // Let hashData be the result of running the algorithm in Section 3.3.4 Hashing (eddsa-jcs-2022) with
         // transformedData and proofConfig passed as a parameters
         let hashed_data = generate_hash(transformed_data, proof_config)?;
-        
+
         // Let proofBytes be the result of running the algorithm in Section 3.3.6 Proof Serialization (eddsa-jcs-2022)
         // with hashData and options passed as parameters
         let proof_bytes = serialize_hashed_data(hashed_data, keypair);
@@ -95,7 +101,7 @@ where
         // Let hashData be the result of running the algorithm in Section 3.3.4 Hashing (eddsa-jcs-2022)
         // with transformedData and proofConfig passed as a parameters
         let hashed_data = generate_hash(transformed_data, proof_config)?;
-        
+
         // Let verified be the result of running the algorithm in Section 3.3.7 Proof Verification (eddsa-jcs-2022)
         // on hashData, proofBytes, and proofConfig
         let is_verified = verify_signature(pubkey, hashed_data, ProofByte::from(proof_bytes))?;

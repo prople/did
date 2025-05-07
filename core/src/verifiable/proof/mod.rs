@@ -48,7 +48,7 @@ pub struct Proof {
     /// Following the formal specification, the "verification method"
     /// must be a string map to some URL
     ///
-    /// Note, that when it is expressed, it's value points to the actual 
+    /// Note, that when it is expressed, it's value points to the actual
     /// location of the data; the location of the public key
     ///  
     /// Ref: https://www.w3.org/TR/vc-data-integrity/#proofs
@@ -217,6 +217,15 @@ where
     _phantom: PhantomData<TDoc>,
 }
 
+impl<TDoc> Default for DataIntegrityEddsaJcs2022<TDoc>
+where
+    TDoc: Proofable,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<TDoc> DataIntegrityEddsaJcs2022<TDoc>
 where
     TDoc: Proofable,
@@ -229,8 +238,7 @@ where
 
     pub fn build(&self) -> Integrity<TDoc, EddsaJcs2022> {
         let eddsa_crypto_instance = EddsaJcs2022::new();
-        let integrity = Integrity::<TDoc, _>::new(eddsa_crypto_instance);
-        integrity
+        Integrity::<TDoc, _>::new(eddsa_crypto_instance)
     }
 }
 
@@ -247,7 +255,7 @@ mod tests {
 
         let json = serde_json::to_string(&proof).unwrap();
         let from_json = serde_json::from_str::<Proof>(&json).unwrap();
-        
+
         assert_eq!(from_json.proof_purpose, proof.proof_purpose);
         assert_eq!(from_json.verification_method, proof.verification_method);
     }

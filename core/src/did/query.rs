@@ -3,7 +3,7 @@ use rst_common::standard::serde::{self, Deserialize, Serialize};
 
 use crate::types::DIDError;
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 #[serde(crate = "self::serde")]
 pub struct Params {
     pub address: Option<String>,
@@ -40,15 +40,6 @@ impl Params {
         }
 
         Some(query_str.join("&"))
-    }
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Params {
-            address: None,
-            hl: None,
-        }
     }
 }
 

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::types::{Hasher, ProofError, ProofOptionsValidator};
 use rst_common::with_cryptography::sha2::{Digest, Sha256};
 
@@ -12,9 +14,9 @@ impl From<String> for TransformedDoc {
     }
 }
 
-impl ToString for TransformedDoc {
-    fn to_string(&self) -> String {
-        self.0.to_owned()
+impl Display for TransformedDoc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -42,8 +44,8 @@ where
     TDoc: ToJCS,
     TOpts: ProofOptionsValidator,
 {
-    let _ = opts.validate_type()?;
-    let _ = opts.validate_cryptosuite()?;
+    opts.validate_type()?;
+    opts.validate_cryptosuite()?;
 
     let canonical_document = doc
         .to_jcs()

@@ -8,7 +8,7 @@ use rst_common::with_cryptography::sha2::{Digest, Sha384};
 use prople_crypto::keysecure::KeySecure;
 
 use crate::account::Account;
-use crate::identity::types::Identity;
+use crate::identity::Identity;
 use crate::types::*;
 
 pub mod query;
@@ -27,6 +27,12 @@ use query::Params;
 #[derive(Debug, Clone)]
 pub struct DID {
     account: Account,
+}
+
+impl Default for DID {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DID {
@@ -86,7 +92,7 @@ impl DID {
 
     pub fn parse_uri(uri: String) -> Result<(String, Params), DIDError> {
         let splitted = uri.as_str().split("?").collect::<Vec<&str>>();
-        if splitted.len() < 1 {
+        if splitted.is_empty() {
             return Err(DIDError::ParseURIError("invalid given uri".to_string()));
         }
 
@@ -125,7 +131,7 @@ mod tests {
 
     use prople_crypto::keysecure::types::{Password, ToKeySecure};
 
-    use crate::doc::types::ToDoc;
+    use crate::doc::ToDoc;
     use crate::keys::IdentityPrivateKeyPairsBuilder;
 
     #[test]

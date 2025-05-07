@@ -1,6 +1,6 @@
 //! `types` contains all of public base types used on this crate
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use rst_common::{
     standard::serde::Serialize,
@@ -131,9 +131,12 @@ impl From<&str> for JSONValue {
     }
 }
 
-impl ToString for JSONValue {
-    fn to_string(&self) -> String {
-        self.0.to_owned()
+impl Display for JSONValue {
+    // fn to_string(&self) -> String {
+    //     self.0.to_owned()
+    // }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

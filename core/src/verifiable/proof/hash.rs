@@ -7,7 +7,7 @@ pub(crate) struct HashedData(Vec<u8>);
 
 impl HashedData {
     pub(crate) fn to_bytes(&self) -> &[u8] {
-        &self.0.as_slice()
+        self.0.as_slice()
     }
 }
 
